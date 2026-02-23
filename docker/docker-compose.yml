@@ -2,32 +2,32 @@ services:
   api:
     container_name: expense_api
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: ../backend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
       - "5555:5555"
     env_file:
-      - .env.docker
+      - ../backend/.env.docker
     depends_on:
       - postgres
       - redis
     volumes:
-      - ..:/app
+      - ../backend:/app
       - /app/node_modules
     command: npm run dev
 
   worker:
     container_name: expense_worker
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: ../backend
+      dockerfile: Dockerfile
     env_file:
-      - .env.docker
+      - ../backend/.env.docker
     depends_on:
       - redis
     volumes:
-      - ..:/app
+      - ../backend:/app
       - /app/node_modules
     command: npm run worker
 
