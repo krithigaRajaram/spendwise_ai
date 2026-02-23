@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  name         String
+  createdAt   DateTime      @default(now())
+
+  transactions Transaction[]
+  reports      Report[]
+  merchantCategories MerchantCategory[]
+  gmailSyncState GmailSyncState?
+  rawEmails RawEmail[]
+}
+
+model Transaction {
+  id          Int       @id @default(autoincrement())
+  amount      Float
+  type        String    // "INCOME" | "EXPENSE"
+  category    String
+  description String?
+  merchant    String?
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Report {
+  id          Int       @id @default(autoincrement())
+  title       String
+  fromDate    DateTime
+  toDate      DateTime
+  createdAt   DateTime  @default(now())
+
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model GmailToken {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  accessToken  String
+  refreshToken String
+  expiryDate   BigInt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model RawEmail {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  gmailId    String
+  threadId   String?
+  payload    Json
+  receivedAt DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+  bankName   String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, gmailId], name: "userId_gmailId")
+}
+
+model GmailSyncState {
+  userId        Int   @id
+  lastFetchedAt DateTime
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model MerchantCategory {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  merchantKeyword String
+  category        String
+  createdAt       DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, merchantKeyword])
+}
