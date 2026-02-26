@@ -1,168 +1,90 @@
-const AMOUNT_REGEX = /(Rs\.?|INR)\s*([\d,]+(?:\.\d{1,2})?)/gi;
+const AMOUNT_REGEX = /Rs\.?\s*([\d,]+(?:\.\d{1,2})?)/i;
 
-const DEBIT_REGEX =
-  /(debited|spent|purchase|withdrawal|atm withdrawal|cash withdrawal)/i;
+const DEBIT_REGEX = /(has been debited|is debited|debited)/i;
+const CREDIT_REGEX = /(has been credited|credited)/i;
 
-const CREDIT_REGEX =
-  /(credited|received|refund)/i;
+const VPA_REGEX = /to\s+VPA\s+[^\s]+\s+(.+?)\s+on/i;
+const TO_REGEX = /to\s+(.+?)\s+on/i;
+const AT_REGEX = /at\s+(.+?)\s+on/i;
 
-const ATM_REGEX =
-  /(atm withdrawal|cash withdrawal)/i;
+const DATE_REGEX = /on\s+(\d{2}-\d{2}-\d{2,4})/i;
 
-const DATE_TIME_REGEX =
-  /on\s(\d{2}-\d{2}-\d{4}\s\d{2}:\d{2}:\d{2})/i;
+function normalizeDate(rawDate) {
+  if (!rawDate) return null;
 
-const DATE_ONLY_REGEX =
-  /on\s(\d{2}-\d{2}-\d{2,4})/i;
-
-
-function extractMerchant(snippet) {
-
-  // UPI pattern: VPA merchant@bank NAME on DD-MM-YY
-  const vpaMatch = snippet.match(
-    /VPA\s([A-Za-z0-9@.\- ]+?)\s+on\s/i
-  );
-  if (vpaMatch) {
-    return cleanMerchant(vpaMatch[1]);
+  const parts = rawDate.split("-");
+  if (parts[2].length === 2) {
+    return new Date(`20${parts[2]}-${parts[1]}-${parts[0]}`);
   }
 
-  // Pattern: to MERCHANT on
-  const toMatch = snippet.match(
-    /to\s([A-Za-z0-9@&.\- ]+?)\s+on\s/i
-  );
-  if (toMatch) {
-    return cleanMerchant(toMatch[1]);
-  }
-
-  // Pattern: at MERCHANT on
-  const atMatch = snippet.match(
-    /at\s([A-Za-z0-9@&.\- ]+?)\s+on\s/i
-  );
-  if (atMatch) {
-    return cleanMerchant(atMatch[1]);
-  }
-
-  return null;
+  return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
 }
 
-function cleanMerchant(raw) {
-  if (!raw) return null;
-
-  return raw
-    .replace(/VPA/i, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-
-
-function detectCategory(merchant, snippet) {
-
-  // ATM override
-  if (ATM_REGEX.test(snippet)) {
-    return "ATM";
-  }
-
+function detectCategory(merchant) {
   if (!merchant) return "UNCATEGORIZED";
 
   const m = merchant.toLowerCase();
 
-  if (m.includes("zomato") || m.includes("swiggy")) {
-    return "FOOD";
-  }
-
-  if (m.includes("redbus") || m.includes("irctc") || m.includes("uber")) {
-    return "TRAVEL";
-  }
-
-  if (
-    m.includes("netflix") ||
-    m.includes("prime") ||
-    m.includes("zee5") ||
-    m.includes("spotify")
-  ) {
-    return "SUBSCRIPTION";
-  }
-
-  if (
-    m.includes("amazon") ||
-    m.includes("flipkart") ||
-    m.includes("myntra")
-  ) {
-    return "SHOPPING";
-  }
+  if (m.includes("zomato") || m.includes("swiggy")) return "FOOD";
+  if (m.includes("uber") || m.includes("ola") || m.includes("irctc")) return "TRAVEL";
+  if (m.includes("amazon") || m.includes("flipkart") || m.includes("myntra")) return "SHOPPING";
+  if (m.includes("netflix") || m.includes("spotify") || m.includes("prime")) return "SUBSCRIPTION";
 
   return "UNCATEGORIZED";
 }
 
+function extractMerchant(text) {
+  let match;
+
+  match = text.match(VPA_REGEX);
+  if (match) return match[1].trim();
+
+  match = text.match(TO_REGEX);
+  if (match) return match[1].trim();
+
+  match = text.match(AT_REGEX);
+  if (match) return match[1].trim();
+
+  return null;
+}
 
 export function parseHdfcEmail(emailBody) {
   if (!emailBody) return [];
 
   const cleanText = emailBody
     .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ");
+    .replace(/\s+/g, " ")
+    .trim();
 
-  const transactions = [];
-  let match;
+  const amountMatch = cleanText.match(AMOUNT_REGEX);
+  if (!amountMatch) return [];
 
-  while ((match = AMOUNT_REGEX.exec(cleanText)) !== null) {
+  const amount = Number(amountMatch[1].replace(/,/g, ""));
+  if (!amount) return [];
 
-    const amount = Number(match[2].replace(/,/g, ""));
-    if (!amount) continue;
+  let type = null;
 
-    const snippet = cleanText.slice(
-      Math.max(0, match.index - 200),
-      match.index + 200
-    );
+  if (DEBIT_REGEX.test(cleanText)) type = "EXPENSE";
+  else if (CREDIT_REGEX.test(cleanText)) type = "INCOME";
 
-    let type = null;
+  if (!type) return [];
 
-    if (CREDIT_REGEX.test(snippet)) {
-      type = "INCOME";
-    } else if (DEBIT_REGEX.test(snippet)) {
-      type = "EXPENSE";
-    }
+  const merchant = extractMerchant(cleanText);
+  const category = detectCategory(merchant);
 
-    if (!type) continue;
+  let date = null;
+  const dateMatch = cleanText.match(DATE_REGEX);
+  if (dateMatch) {
+    date = normalizeDate(dateMatch[1]);
+  }
 
-    // Extract merchant
-    const merchant = extractMerchant(snippet);
-
-    //Detect category
-    const category = detectCategory(merchant, snippet);
-
-    //Extract date
-    let date = null;
-
-    const dateTimeMatch = DATE_TIME_REGEX.exec(snippet);
-    if (dateTimeMatch) {
-      date = new Date(
-        dateTimeMatch[1].replace(
-          /(\d{2})-(\d{2})-(\d{4})/,
-          "$3-$2-$1"
-        )
-      );
-    } else {
-      const dateOnlyMatch = DATE_ONLY_REGEX.exec(snippet);
-      if (dateOnlyMatch) {
-        const raw = dateOnlyMatch[1];
-        const normalized =
-          raw.length === 8
-            ? raw.replace(/(\d{2})-(\d{2})-(\d{2})/, "20$3-$2-$1")
-            : raw.replace(/(\d{2})-(\d{2})-(\d{4})/, "$3-$2-$1");
-        date = new Date(normalized);
-      }
-    }
-
-    transactions.push({
+  return [
+    {
       amount,
       type,
       category,
       merchant,
       date
-    });
-  }
-
-  return transactions;
+    }
+  ];
 }
