@@ -103,3 +103,398 @@ body {
   text-align: center;
   color: #b0b3b8;
 }
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px 40px;
+  background: #2a2c31;
+}
+
+.nav-actions button {
+  margin-left: 15px;
+}
+
+.center-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.card {
+  background: #2a2c31;
+  padding: 40px;
+  border-radius: 12px;
+  width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.card input {
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+.card button,
+.gmail-btn {
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background: #5c7cfa;
+  color: white;
+  cursor: pointer;
+}
+
+.dashboard-container {
+  padding: 40px;
+  max-width: 800px;
+  margin: auto;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #3a3c42;
+}
+
+.logo-img {
+  width: 55px;
+  height: 55px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Logo Layout */
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+/* Button System */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+/* Primary (Monthly Report) */
+.btn-primary {
+  background: linear-gradient(135deg, #5c7cfa, #748ffc);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(92, 124, 250, 0.35);
+}
+
+/* Secondary (Gmail) */
+.btn-secondary {
+  background: #3a3c42;
+  color: #e4e6eb;
+}
+
+.btn-secondary:hover {
+  background: #45474d;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Danger (Logout) */
+.btn-danger {
+  background: #3a3c42;
+  color: #ff6b6b;
+}
+
+.btn-danger:hover {
+  background: #452f35;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 107, 107, 0.3);
+}
+
+/* Button Active Press */
+.btn:active {
+  transform: translateY(0px);
+  box-shadow: none;
+}
+
+/* Navbar refinement */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: #2a2c31;
+  border-bottom: 1px solid #3a3c42;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Auth Pages */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at top left, #25272d, #1e1f23);
+}
+
+.auth-card {
+  width: 420px;
+  padding: 50px 45px;
+  background: #2a2c31;
+  border-radius: 18px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: transform 0.3s ease;
+}
+
+.auth-card:hover {
+  transform: translateY(-3px);
+}
+
+.auth-card input {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #3a3c42;
+  background: #1e1f23;
+  color: #e4e6eb;
+  outline: none;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.auth-card input:focus {
+  border: 1px solid #5c7cfa;
+  box-shadow: 0 0 0 2px rgba(92, 124, 250, 0.2);
+}
+
+.auth-brand {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.auth-logo {
+  width: 60px;
+  margin-bottom: 8px;
+}
+
+.auth-tagline {
+  font-size: 13px;
+  color: #b0b3b8;
+  margin-top: 5px;
+}
+
+
+.full-width {
+  width: 100%;
+}
+
+.auth-footer {
+  font-size: 13px;
+  text-align: center;
+  color: #b0b3b8;
+}
+
+.auth-link {
+  color: #5c7cfa;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+/* Transactions Section */
+
+.transactions-wrapper {
+  margin-top: 40px;
+}
+
+.section-title {
+  margin-bottom: 20px;
+  font-size: 18px;
+  margin-left: 250px;
+  font-weight: 600;
+}
+
+.transaction-table {
+  background: #2a2c31;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.35);
+}
+
+.transaction-header,
+.transaction-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr;
+  padding: 14px 20px;
+  align-items: center;
+}
+
+.transaction-header {
+  background: #33353b;
+  font-size: 13px;
+  font-weight: 600;
+  color: #b0b3b8;
+}
+
+.transaction-row {
+  border-top: 1px solid #3a3c42;
+  transition: background 0.2s ease;
+}
+
+.transaction-row:hover {
+  background: #32343a;
+}
+
+.merchant {
+  font-weight: 500;
+}
+
+.amount {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.small {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+
+/* Report Layout */
+
+.report-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 50px;
+  min-height: 500px;
+}
+
+/* LEFT SIDE */
+
+.category-panel {
+  padding: 0 60px 0 0;
+  border-right: 1px solid #32343a; 
+  display: flex;
+  flex-direction: column;
+  justify-content: center; 
+}
+
+.category-item {
+  padding: 16px 0;
+  border-bottom: 1px solid #2d2f35;
+}
+
+.category-item:last-child {
+  border-bottom: none;
+}
+
+.category-columns {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 0.7fr;
+  align-items: center;
+  font-size: 14px;
+}
+
+.cat-name {
+  font-weight: 500;
+}
+
+.cat-amount {
+  text-align: right;
+  font-weight: 500;
+}
+
+.cat-percent {
+  text-align: right;
+  color: #b0b3b8;
+  font-size: 13px;
+}
+
+/* Progress Line Under Each Category */
+
+.percent-bar {
+  height: 5px;
+  background: #2a2c31;
+  border-radius: 10px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.percent-fill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+/* RIGHT SIDE */
+
+.chart-wrapper {
+  padding: 0 0 0 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center; /* vertical center chart */
+  position: relative;
+}
+
+.chart-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.chart-center p {
+  font-size: 13px;
+  color: #b0b3b8;
+}
+
+.chart-center h3 {
+  font-size: 22px;
+  margin-top: 4px;
+}
+
+.clickable-logo {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-logo:hover {
+  opacity: 0.85;
+}
+
+.active-nav {
+  box-shadow: 0 0 0 2px rgba(92, 124, 250, 0.4);
+}

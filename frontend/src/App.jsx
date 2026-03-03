@@ -1,56 +1,45 @@
-import { useEffect, useState } from "react";
-import { fetchMonthlyReport } from "./services/reportService";
-import ReportCard from "./components/ReportCard";
-import "./index.css";
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import DashboardPage from "./pages/DashboardPage";
+import ReportPage from "./pages/ReportPage";
+import { isAuthenticated } from "./services/authService";
 
 function App() {
-  const [report, setReport] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadReport = async () => {
-      try {
-        const data = await fetchMonthlyReport(2, 2026);
-
-        const formattedReport = {
-          ...data,
-          total: data.totalExpense,
-          categories: Object.entries(data.expenseByCategory || {}).map(
-            ([name, total]) => ({
-              name,
-              total,
-            })
-          ),
-        };
-
-        setReport(formattedReport);
-      } catch (err) {
-        if (err.message.includes("No authentication token")) {
-          setError("Authentication required. Please login.");
-        } else {
-          setError("Failed to load report.");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadReport();
-  }, []);
+  const authenticated = isAuthenticated();
 
   return (
-    <div className="app-container">
-      <div className="dashboard">
-        <h1 className="app-heading">Expense Tracker</h1>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          authenticated
+            ? <Navigate to="/dashboard" />
+            : <Navigate to="/login" />
+        }
+      />
 
-        {loading && <p className="loading-text">Loading report...</p>}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
 
-        {error && <p className="error-text">{error}</p>}
+      <Route
+        path="/dashboard"
+        element={
+          authenticated
+            ? <DashboardPage />
+            : <Navigate to="/login" />
+        }
+      />
 
-        {!loading && report && <ReportCard report={report} />}
-      </div>
-    </div>
+      <Route
+        path="/report"
+        element={
+          authenticated
+            ? <ReportPage />
+            : <Navigate to="/login" />
+        }
+      />
+    </Routes>
   );
 }
 
