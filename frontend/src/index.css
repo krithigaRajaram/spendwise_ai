@@ -1,0 +1,105 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Inter", sans-serif;
+}
+
+body {
+  background: #1e1f23;
+  color: #e4e6eb;
+}
+
+/* Layout */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 700px;
+  padding: 40px 20px;
+}
+
+.app-heading {
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Card */
+.report-card {
+  background: #2a2c31;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Total section */
+.total-section {
+  background: #33353b;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+}
+
+.total-section h3 {
+  font-size: 14px;
+  color: #b0b3b8;
+  margin-bottom: 6px;
+}
+
+.total-amount {
+  font-size: 30px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Category section */
+.category-title {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.category-item {
+  margin-bottom: 15px;
+}
+
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: #3a3c42;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #5c7cfa, #748ffc);
+  border-radius: 10px;
+  transition: width 0.4s ease;
+}
+
+.error-text {
+  text-align: center;
+  color: #ff6b6b;
+  margin-top: 15px;
+}
+
+.loading-text {
+  text-align: center;
+  color: #b0b3b8;
+}

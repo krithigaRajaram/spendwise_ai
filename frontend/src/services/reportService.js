@@ -1,11 +1,15 @@
 export const fetchMonthlyReport = async (month, year) => {
   const token = localStorage.getItem("token");
 
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
   const response = await fetch(
     `http://localhost:3000/reports/monthly?month=${month}&year=${year}`,
     {
       headers: {
-        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTc3MjEwOTU1MSwiZXhwIjoxNzcyMTEzMTUxfQ.2yYUNQ2ePMS2gA6wR7Z_fmVW7Vvoxw3C03G3YlI7FFQ",
+        Authorization: `Bearer ${token}`,
       },
     }
   );

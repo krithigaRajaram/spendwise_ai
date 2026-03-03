@@ -1,4 +1,5 @@
 import CategoryList from "./CategoryList";
+
 function ReportCard({ report }) {
   if (!report) return null;
 
@@ -9,28 +10,12 @@ function ReportCard({ report }) {
     categories.reduce((sum, cat) => sum + (cat.total || 0), 0);
 
   return (
-    <div
-      style={{
-        background: "white",
-        padding: "20px",
-        borderRadius: "8px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h2>Monthly Report</h2>
+    <div className="report-card">
+      <h2 style={{ marginBottom: "20px" }}>Monthly Report</h2>
 
-      <div
-        style={{
-          marginBottom: "20px",
-          padding: "10px",
-          backgroundColor: "#eef3ff",
-          borderRadius: "6px",
-        }}
-      >
+      <div className="total-section">
         <h3>Total Spent</h3>
-        <p style={{ fontSize: "24px", fontWeight: "bold" }}>
-          ₹ {total}
-        </p>
+        <p className="total-amount">₹ {total}</p>
       </div>
 
       {categories.length > 0 ? (
@@ -41,4 +26,5 @@ function ReportCard({ report }) {
     </div>
   );
 }
+
 export default ReportCard;
