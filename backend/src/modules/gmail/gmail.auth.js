@@ -44,7 +44,7 @@ export const gmailCallback = async (req, res) => {
       }
     });
 
-    res.send("Gmail connected successfully");
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard?gmail=connected`);
 
   } catch (error) {
     console.error("Gmail OAuth error:", error);

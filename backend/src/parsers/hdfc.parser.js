@@ -26,9 +26,10 @@ function detectCategory(merchant) {
   const m = merchant.toLowerCase();
 
   if (m.includes("zomato") || m.includes("swiggy")) return "FOOD";
-  if (m.includes("uber") || m.includes("ola") || m.includes("irctc")) return "TRAVEL";
+  if (m.includes("uber") || m.includes("ola") || m.includes("irctc") || m.includes("redbus")) return "TRAVEL";
   if (m.includes("amazon") || m.includes("flipkart") || m.includes("myntra")) return "SHOPPING";
   if (m.includes("netflix") || m.includes("spotify") || m.includes("prime")) return "SUBSCRIPTION";
+  if (m.includes("zepto") || m.includes("blinkit")) return "GROCERIES";
 
   return "UNCATEGORIZED";
 }

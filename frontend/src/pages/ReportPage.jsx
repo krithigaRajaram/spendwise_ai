@@ -14,7 +14,8 @@ function ReportPage() {
 
   useEffect(() => {
     const load = async () => {
-      const data = await fetchMonthlyReport(2, 2026);
+      // For demonstration, using fixed month and year. In a real app, these could be dynamic.
+      const data = await fetchMonthlyReport(3, 2026);
 
       const categories = Object.entries(
         data.expenseByCategory || {}

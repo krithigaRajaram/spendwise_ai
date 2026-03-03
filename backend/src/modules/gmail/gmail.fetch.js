@@ -82,7 +82,7 @@ export const fetchAndStoreEmails = async (userId) => {
 
 export async function fetchGmailMessages(req, res) {
   try {
-    const userId = req.user?.id || 1;
+    const userId = req.userId;
     fetchAndStoreEmails(userId).catch(console.error);
     res.json({ status: "Gmail fetch started" });
   } catch (err) {
