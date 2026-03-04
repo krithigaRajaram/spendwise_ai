@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "../config";
 
-function TransactionList() {
+function TransactionList({ refreshKey }) {
   const [transactions, setTransactions] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [updatedCategory, setUpdatedCategory] = useState("");
@@ -9,17 +9,21 @@ function TransactionList() {
   const token = localStorage.getItem("token");
 
   const fetchTransactions = async () => {
-    const res = await fetch(`${API_BASE_URL}/transactions`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    try {
+      const res = await fetch(`${API_BASE_URL}/transactions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const data = await res.json();
-    setTransactions(data);
+      const data = await res.json();
+      setTransactions(data);
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+    }
   };
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [refreshKey]); // re-run when refreshKey changes
 
   const updateCategory = async (id) => {
     await fetch(`${API_BASE_URL}/transactions/${id}`, {
@@ -32,7 +36,7 @@ function TransactionList() {
     });
 
     setEditingId(null);
-    fetchTransactions();
+    fetchTransactions(); // local refresh
   };
 
   const deleteTransaction = async (id) => {
@@ -47,7 +51,7 @@ function TransactionList() {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    fetchTransactions();
+    fetchTransactions(); // local refresh
   };
 
   return (

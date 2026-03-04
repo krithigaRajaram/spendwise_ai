@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 
-function Navbar() {
+function Navbar({ onFetchEmails, loading }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -11,7 +11,7 @@ function Navbar() {
   };
 
   const connectGmail = () => {
-    window.location.href = `${API_BASE_URL}/auth/gmail`;
+    window.location.href = `${API_BASE_URL}/gmail/auth`;
   };
 
   const goDashboard = () => {
@@ -31,6 +31,14 @@ function Navbar() {
           onClick={connectGmail}
         >
           Connect Gmail
+        </button>
+
+        <button
+          className="btn btn-info"
+          onClick={onFetchEmails}
+          disabled={loading}
+        >
+          {loading ? "Fetching..." : "Fetch Emails"}
         </button>
 
         <button
