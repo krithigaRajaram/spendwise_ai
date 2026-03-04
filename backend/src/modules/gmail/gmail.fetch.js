@@ -83,7 +83,10 @@ export const fetchAndStoreEmails = async (userId) => {
 export async function fetchGmailMessages(req, res) {
   try {
     const userId = req.userId;
-    fetchAndStoreEmails(userId).catch(console.error);
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    await fetchAndStoreEmails(userId);
     res.json({ status: "Gmail fetch started" });
   } catch (err) {
     console.error(err);
