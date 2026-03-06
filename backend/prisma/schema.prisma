@@ -8,42 +8,38 @@ datasource db {
 }
 
 model User {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  password     String
-  name         String
-  createdAt   DateTime      @default(now())
-
-  transactions Transaction[]
-  reports      Report[]
+  id                 Int                @id @default(autoincrement())
+  email              String             @unique
+  password           String
+  name               String
+  createdAt          DateTime           @default(now())
+  gmailSyncState     GmailSyncState?
   merchantCategories MerchantCategory[]
-  gmailSyncState GmailSyncState?
-  rawEmails RawEmail[]
+  rawEmails          RawEmail[]
+  reports            Report[]
+  transactions       Transaction[]
 }
 
 model Transaction {
-  id          Int       @id @default(autoincrement())
-  amount      Float
-  type        String    // "INCOME" | "EXPENSE"
-  category    String
-  description String?
-  merchant    String?
-  date        DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  amount    Float
+  type      String
+  category  String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  userId    Int
+  merchant  String?
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Report {
-  id          Int       @id @default(autoincrement())
-  title       String
-  fromDate    DateTime
-  toDate      DateTime
-  createdAt   DateTime  @default(now())
-
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  title     String
+  fromDate  DateTime
+  toDate    DateTime
+  createdAt DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model GmailToken {
@@ -66,17 +62,15 @@ model RawEmail {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
   bankName   String?
-
-  user User @relation(fields: [userId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, gmailId], name: "userId_gmailId")
 }
 
 model GmailSyncState {
-  userId        Int   @id
+  userId        Int      @id
   lastFetchedAt DateTime
-
-  user User @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model MerchantCategory {
@@ -85,8 +79,7 @@ model MerchantCategory {
   merchantKeyword String
   category        String
   createdAt       DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, merchantKeyword])
 }

@@ -23,7 +23,7 @@ function TransactionList({ refreshKey }) {
 
   useEffect(() => {
     fetchTransactions();
-  }, [refreshKey]); // re-run when refreshKey changes
+  }, [refreshKey]);
 
   const updateCategory = async (id) => {
     await fetch(`${API_BASE_URL}/transactions/${id}`, {
@@ -36,7 +36,7 @@ function TransactionList({ refreshKey }) {
     });
 
     setEditingId(null);
-    fetchTransactions(); // local refresh
+    fetchTransactions();
   };
 
   const deleteTransaction = async (id) => {
@@ -51,7 +51,7 @@ function TransactionList({ refreshKey }) {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    fetchTransactions(); // local refresh
+    fetchTransactions();
   };
 
   return (
@@ -62,6 +62,7 @@ function TransactionList({ refreshKey }) {
         <div className="transaction-header">
           <span>Merchant</span>
           <span>Category</span>
+          <span>Type</span>
           <span>Amount</span>
           <span>Actions</span>
         </div>
@@ -82,7 +83,21 @@ function TransactionList({ refreshKey }) {
               )}
             </span>
 
-            <span className="amount">₹ {txn.amount}</span>
+            <span
+              className={`type ${
+                txn.type === "INCOME" ? "income-text" : "expense-text"
+              }`}
+            >
+              {txn.type}
+            </span>
+
+            <span
+              className={`amount ${
+                txn.type === "INCOME" ? "income-text" : "expense-text"
+              }`}
+            >
+              ₹ {txn.amount}
+            </span>
 
             <span className="actions">
               {editingId === txn.id ? (
