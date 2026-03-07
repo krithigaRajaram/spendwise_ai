@@ -25,7 +25,9 @@ export const createTransaction = async (req, res) => {
         category,
         merchant: merchant ? merchant.trim() : "Manual Entry",
         date: date ? new Date(date) : new Date(),
-        userId: req.userId
+        userId: req.userId,
+        source: "MANUAL"
+
       }
     });
 

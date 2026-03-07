@@ -29,6 +29,7 @@ model Transaction {
   createdAt DateTime @default(now())
   userId    Int
   merchant  String?
+  source    String   @default("REGEX")
   user      User     @relation(fields: [userId], references: [id])
 }
 

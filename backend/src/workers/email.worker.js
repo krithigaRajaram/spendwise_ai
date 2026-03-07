@@ -2,6 +2,8 @@ import { Worker } from "bullmq";
 import prisma from "../config/prisma.js";
 import { extractEmailBody } from "../utils/email.util.js";
 import { parseHdfcEmail } from "../parsers/hdfc.parser.js";
+import { parseWithAI } from "../parsers/ai.parser.js";
+
 
 function normalizeMerchant(merchant) {
   if (!merchant) return null;
@@ -45,7 +47,17 @@ const worker = new Worker(
 
       if (rawEmail.bankName !== "HDFC") return;
 
-      const parsedTxs = parseHdfcEmail(emailBody);
+      let parsedTxs = [];
+      let source = "REGEX";
+
+      try {
+        const aiResult = await parseWithAI(emailBody);
+        parsedTxs = [{ ...aiResult, source: "AI" }];
+        console.log("AI parsing succeeded");
+      } catch (err) {
+        console.warn("AI parsing failed, falling back to regex:", err.message);
+        parsedTxs = parseHdfcEmail(emailBody).map(tx => ({ ...tx, source: "REGEX" }));
+      }
 
       if (!parsedTxs.length) {
         console.log("No transactions detected:", rawEmailId);
@@ -88,8 +100,8 @@ const worker = new Worker(
             type: tx.type,
             category: finalCategory,
             merchant: normalizedMerchant,
-            description: "Auto-imported from HDFC",
-            date: tx.date || rawEmail.receivedAt
+            date: rawEmail.receivedAt,
+            source: tx.source || "REGEX"
           }
         });
 
