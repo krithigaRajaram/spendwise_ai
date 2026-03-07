@@ -1,9 +1,6 @@
-// src/services/authService.js
-
-const BASE_URL = "http://localhost:3000";
-
+import { API_BASE_URL } from "../config";
 export const loginUser = async (email, password) => {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

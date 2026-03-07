@@ -10,9 +10,10 @@ function Navbar({ onFetchEmails, loading }) {
     navigate("/login");
   };
 
-  const connectGmail = () => {
-    window.location.href = `${API_BASE_URL}/gmail/auth`;
-  };
+const connectGmail = () => {
+  const token = localStorage.getItem("token");
+  window.location.href = `${API_BASE_URL}/gmail/auth?token=${token}`;
+};
 
   const goDashboard = () => {
     navigate("/dashboard");

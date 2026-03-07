@@ -10,15 +10,18 @@ export const fetchAndStoreEmails = async (userId) => {
     where: { userId }
   });
 
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
   const afterTs = syncState
     ? Math.floor(syncState.lastFetchedAt.getTime() / 1000)
-    : null;
+    : Math.floor(threeMonthsAgo.getTime() / 1000);
 
   console.log("Fetching Gmail messages after:", afterTs);
 
   const listRes = await gmail.users.messages.list({
     userId: "me",
-    maxResults: 20,
+    maxResults: 100,
     q: afterTs ? `after:${afterTs}` : undefined
   });
 

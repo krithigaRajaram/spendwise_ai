@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "../config";
 export const fetchMonthlyReport = async (month, year) => {
   const token = localStorage.getItem("token");
 
@@ -6,7 +7,7 @@ export const fetchMonthlyReport = async (month, year) => {
   }
 
   const response = await fetch(
-    `http://localhost:3000/reports/monthly?month=${month}&year=${year}`,
+    `${API_BASE_URL}/reports/monthly?month=${month}&year=${year}`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
