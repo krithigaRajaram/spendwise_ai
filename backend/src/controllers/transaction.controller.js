@@ -121,8 +121,7 @@ export const updateTransaction = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const { amount, type, category, merchant, date } = req.body;
-
+    const { amount, type, category, merchant, date, mapMerchant } = req.body;
     const existingTx = await prisma.transaction.findFirst({
       where: {
         id: Number(id),
@@ -146,8 +145,7 @@ export const updateTransaction = async (req, res) => {
     });
 
     // merchant -> category learning
-    if (category && existingTx.merchant) {
-
+    if (mapMerchant && category && existingTx.merchant) {
       await prisma.merchantCategory.upsert({
         where: {
           userId_merchantKeyword: {
@@ -155,9 +153,7 @@ export const updateTransaction = async (req, res) => {
             merchantKeyword: existingTx.merchant.toLowerCase()
           }
         },
-        update: {
-          category
-        },
+        update: { category },
         create: {
           userId,
           merchantKeyword: existingTx.merchant.toLowerCase(),

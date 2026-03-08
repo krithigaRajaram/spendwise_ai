@@ -5,6 +5,8 @@ function TransactionList({ refreshKey }) {
   const [transactions, setTransactions] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [updatedCategory, setUpdatedCategory] = useState("");
+  const [showMapModal, setShowMapModal] = useState(false);
+  const [pendingSave, setPendingSave] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -13,7 +15,6 @@ function TransactionList({ refreshKey }) {
       const res = await fetch(`${API_BASE_URL}/transactions`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const data = await res.json();
       setTransactions(data);
     } catch (err) {
@@ -25,16 +26,25 @@ function TransactionList({ refreshKey }) {
     fetchTransactions();
   }, [refreshKey]);
 
-  const updateCategory = async (id) => {
+  const handleSaveClick = (id) => {
+    setPendingSave({ id, category: updatedCategory });
+    setShowMapModal(true);
+  };
+
+  const updateCategory = async (mapMerchant) => {
+    const { id, category } = pendingSave;
+
     await fetch(`${API_BASE_URL}/transactions/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ category: updatedCategory }),
+      body: JSON.stringify({ category, mapMerchant }),
     });
 
+    setShowMapModal(false);
+    setPendingSave(null);
     setEditingId(null);
     fetchTransactions();
   };
@@ -43,7 +53,6 @@ function TransactionList({ refreshKey }) {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this transaction?"
     );
-
     if (!confirmDelete) return;
 
     await fetch(`${API_BASE_URL}/transactions/${id}`, {
@@ -84,19 +93,11 @@ function TransactionList({ refreshKey }) {
               )}
             </span>
 
-            <span
-              className={`type ${
-                txn.type === "INCOME" ? "income-text" : "expense-text"
-              }`}
-            >
+            <span className={`type ${txn.type === "INCOME" ? "income-text" : "expense-text"}`}>
               {txn.type}
             </span>
 
-            <span
-              className={`amount ${
-                txn.type === "INCOME" ? "income-text" : "expense-text"
-              }`}
-            >
+            <span className={`amount ${txn.type === "INCOME" ? "income-text" : "expense-text"}`}>
               ₹ {txn.amount}
             </span>
 
@@ -112,7 +113,7 @@ function TransactionList({ refreshKey }) {
               {editingId === txn.id ? (
                 <button
                   className="btn btn-primary small"
-                  onClick={() => updateCategory(txn.id)}
+                  onClick={() => handleSaveClick(txn.id)}
                 >
                   Save
                 </button>
@@ -138,6 +139,23 @@ function TransactionList({ refreshKey }) {
           </div>
         ))}
       </div>
+
+      {showMapModal && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <h3>Update Category</h3>
+            <p>Do you want to apply this category only to this transaction, or map this merchant for future transactions too?</p>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => updateCategory(false)}>
+                This transaction only
+              </button>
+              <button className="btn btn-primary" onClick={() => updateCategory(true)}>
+                Map merchant for future
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
