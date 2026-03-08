@@ -1,35 +1,55 @@
-const HF_API_URL = "https://router.huggingface.co/v1/chat/completions";
+const HF_API_URL = "https://models.inference.ai.azure.com/chat/completions";
 
 export async function parseWithAI(emailText) {
   const response = await fetch(HF_API_URL, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.HF_API_TOKEN}`,
+      "Authorization": `Bearer ${process.env.GITHUB_TOKEN}`,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      model: "meta-llama/Llama-3.1-8B-Instruct",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "user",
-            content: `You are a financial data extractor for Indian bank emails.
+            content: `You are a financial data extractor for Indian bank transaction emails.
 
-            Extract transaction details and return ONLY a valid JSON object with these exact fields:
+            Extract transaction details and return ONLY a valid JSON object:
 
             {
-            "amount": <number with decimals, e.g. 2.00 not 2000>,
-            "type": <"EXPENSE" or "INCOME">,
-            "merchant": <clean short name only, see rules>,
-            "category": <one of: "FOOD", "TRAVEL", "SHOPPING", "SUBSCRIPTION", "GROCERIES", "TRANSFER", "UNCATEGORIZED">,
-            "date": <"DD-MM-YY" or null>
+              "amount": <extract the transaction amount as a number with decimals>,
+              "type": <"EXPENSE" or "INCOME">,
+              "merchant": <clean short name, see rules>,
+              "category": <see category rules below>,
+              "date": <"DD-MM-YY" or null>
             }
 
-            Rules:
-            - "debited" = EXPENSE, "credited" = INCOME
-            - Amount: "Rs. 2.00" = 2.00, "Rs. 163.00" = 163.00. Never remove decimal point.
-            - merchant: extract shortest recognizable name only. Remove VPA handles, @domain, Ltd, Limited, Technologies, Pvt. Examples: "username@okicici JOHN DOE" → "John Doe", "ZOMATO TECHNOLOGIES LIMITED" → "Zomato", "9876543210@upi" → null
-            - If merchant is a person name or phone number, category = TRANSFER
-            - Return ONLY the JSON object, no explanation, no markdown
+            Amount rules:
+            - The transaction amount always appears near "Rs." or "INR" in the email
+            - "Rs. 163.00" = 163.00, "Rs. 2.00" = 2.00. Preserve decimals exactly.
+            - Do NOT extract unit counts, NAV values, or percentages as the amount
+
+            Type rules:
+            - "debited" or "deducted" = EXPENSE
+            - "credited" or "received" = INCOME
+
+            Merchant rules:
+            - Extract shortest recognizable name only
+            - Remove VPA handles, @domain suffixes, Ltd, Limited, Technologies, Pvt, Private
+            - "username@okicici JOHN DOE" → "John Doe"
+            - "ZOMATO TECHNOLOGIES LIMITED" → "Zomato"
+
+            Category rules (pick the best match):
+            - FOOD: Zomato, Swiggy, restaurants, food delivery, cafes
+            - TRAVEL: Uber, Ola, RedBus, IRCTC, MakeMyTrip, airlines, cab, bus, train
+            - SHOPPING: Amazon, Flipkart, Myntra, Meesho, Ajio, retail stores
+            - SUBSCRIPTION: Netflix, Spotify, Prime, Hotstar, JioCinema, YouTube, SaaS
+            - GROCERIES: Zepto, Blinkit, BigBasket, More, Dunzo, Swiggy Instamart
+            - INVESTMENT: Zerodha, Groww, Motilal Oswal, PPFAS, mutual fund, SIP, demat
+            - TRANSFER: person names, phone numbers, UPI to individuals
+            - UNCATEGORIZED: anything that doesn't fit above
+
+            Return ONLY the JSON object, no explanation, no markdown.
 
             Email: "${emailText}"`
         }

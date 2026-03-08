@@ -13,7 +13,7 @@ services:
       - postgres
       - redis
     volumes:
-      - ../backend:/app
+      - ../backend:/app:delegated
       - /app/node_modules
     command: npm run dev
 
@@ -27,7 +27,7 @@ services:
     depends_on:
       - redis
     volumes:
-      - ../backend:/app
+      - ../backend:/app:delegated
       - /app/node_modules
     command: npm run worker
 

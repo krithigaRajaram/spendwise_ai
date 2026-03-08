@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -6,7 +7,9 @@ import ReportPage from "./pages/ReportPage";
 import { isAuthenticated } from "./services/authService";
 
 function App() {
-  const authenticated = isAuthenticated();
+  const [authenticated, setAuthenticated] = useState(isAuthenticated());
+
+  const handleAuthChange = () => setAuthenticated(isAuthenticated());
 
   return (
     <Routes>
@@ -19,8 +22,8 @@ function App() {
         }
       />
 
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/login" element={<LoginPage onAuth={handleAuthChange} />} />
+      <Route path="/signup" element={<SignupPage onAuth={handleAuthChange} />} />
 
       <Route
         path="/dashboard"

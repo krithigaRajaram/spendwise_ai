@@ -64,6 +64,7 @@ function TransactionList({ refreshKey }) {
           <span>Category</span>
           <span>Type</span>
           <span>Amount</span>
+          <span>Date</span>
           <span>Actions</span>
         </div>
 
@@ -97,6 +98,14 @@ function TransactionList({ refreshKey }) {
               }`}
             >
               ₹ {txn.amount}
+            </span>
+
+            <span className="date">
+              {txn.date ? new Date(txn.date).toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              }) : "-"}
             </span>
 
             <span className="actions">

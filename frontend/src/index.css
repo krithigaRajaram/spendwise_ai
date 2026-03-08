@@ -331,6 +331,24 @@ body {
   text-decoration: underline;
 }
 
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  cursor: pointer;
+  font-size: 16px;
+  user-select: none;
+}
+
 /* Transactions Section */
 
 .transactions-wrapper {
@@ -360,7 +378,7 @@ body {
 .transaction-header,
 .transaction-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1fr 1.2fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.2fr;
   padding: 14px 20px;
   align-items: center;
 }
@@ -422,6 +440,20 @@ body {
   color: #ff6b6b;
 }
 
+.category-input {
+  background: #1e2025;
+  color: #ffffff;
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 14px;
+  width: 100%;
+  outline: none;
+}
+
+.category-input:focus {
+  border-color: #7c6cf0;
+}
 /* Report Layout */
 
 .report-layout {
@@ -430,6 +462,7 @@ body {
   margin-top: 50px;
   min-height: 500px;
 }
+
 
 /* LEFT SIDE */
 

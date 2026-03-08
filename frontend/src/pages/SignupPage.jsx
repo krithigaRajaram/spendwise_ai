@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { API_BASE_URL } from "../config";
+import { Eye, EyeOff } from "lucide-react";
 
-function SignupPage() {
+function SignupPage({ onAuth }) {
   const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const signup = async () => {
     try {
@@ -22,10 +24,9 @@ function SignupPage() {
       }
 
       const data = await response.json();
-
       localStorage.setItem("token", data.token);
-
-      navigate("/");
+      onAuth();
+      navigate("/dashboard");
     } catch (err) {
       alert("Signup failed");
     }
@@ -56,12 +57,20 @@ function SignupPage() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="password-wrapper">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <span
+            className="password-toggle"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <EyeOff size={18} color="#b0b3b8" /> : <Eye size={18} color="#b0b3b8" />}
+          </span>
+        </div>
 
         <button className="btn btn-primary full-width" onClick={signup}>
           Create Account
