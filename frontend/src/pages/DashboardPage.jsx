@@ -28,9 +28,11 @@ function DashboardPage() {
       setGmailConnected(true);
       setSearchParams({});
 
-      //Auto-trigger fetch after Gmail connect
-      fetchEmails();
-      
+      // Wait 2 seconds before auto-fetch to ensure token is ready
+      setTimeout(() => {
+        fetchEmails();
+      }, 2000);
+
       setTimeout(() => {
         setGmailConnected(false);
       }, 4000);
@@ -108,8 +110,7 @@ function DashboardPage() {
 
   return (
     <>
-      <Navbar onFetchEmails={fetchEmails} loading={loading} />
-
+      <Navbar onFetchEmails={fetchEmails} loading={loading} syncing={syncing} />
       <div className="dashboard-container">
 
         {gmailConnected && (

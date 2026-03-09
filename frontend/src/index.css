@@ -491,6 +491,18 @@ body {
   gap: 12px;
   justify-content: flex-end;
 }
+
+.transactions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.transaction-filters {
+  display: flex;
+  gap: 12px;
+}
 /* Report Layout */
 
 .report-layout {

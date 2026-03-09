@@ -16,7 +16,6 @@ model User {
   gmailSyncState     GmailSyncState?
   merchantCategories MerchantCategory[]
   rawEmails          RawEmail[]
-  reports            Report[]
   transactions       Transaction[]
 }
 
@@ -33,15 +32,6 @@ model Transaction {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-model Report {
-  id        Int      @id @default(autoincrement())
-  title     String
-  fromDate  DateTime
-  toDate    DateTime
-  createdAt DateTime @default(now())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-}
 
 model GmailToken {
   id           Int      @id @default(autoincrement())

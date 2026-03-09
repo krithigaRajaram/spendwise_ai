@@ -43,14 +43,24 @@ export const createTransaction = async (req, res) => {
 // GET /transactions
 export const getTransactions = async (req, res) => {
   try {
+    const { month, year } = req.query;
+
+    let dateFilter = {};
+
+    if (month && year) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59);
+      dateFilter = {
+        date: { gte: startDate, lte: endDate }
+      };
+    }
 
     const transactions = await prisma.transaction.findMany({
-      where: { userId: req.userId },
+      where: { userId: req.userId, ...dateFilter },
       orderBy: { date: "desc" }
     });
 
     res.json(transactions);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch transactions" });

@@ -7,12 +7,15 @@ import { parseWithAI } from "../parsers/ai.parser.js";
 function normalizeMerchant(merchant) {
   if (!merchant) return null;
 
-  return merchant
+  const cleaned = merchant
     .toLowerCase()
-    .replace(/@[\w.-]+/g, "")
-    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/[^a-z0-9@. ]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
+  if (!cleaned || cleaned.length < 3) return null;
+
+  return cleaned;
 }
 
 function cleanHtml(html) {
@@ -56,7 +59,7 @@ const worker = new Worker(
         return;
       }
 
-      if (rawEmail.bankName !== "HDFC") return;
+      if (!rawEmail.bankName) return;
 
       const cleanBody = cleanHtml(emailBody);
       console.log("Clean email body sent to AI:", cleanBody);

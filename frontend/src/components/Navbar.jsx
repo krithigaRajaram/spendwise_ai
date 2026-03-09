@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 
-function Navbar({ onFetchEmails, loading }) {
+function Navbar({ onFetchEmails, loading, syncing }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -37,9 +37,9 @@ const connectGmail = () => {
         <button
           className="btn btn-info"
           onClick={onFetchEmails}
-          disabled={loading}
+          disabled={loading || syncing}
         >
-          {loading ? "Fetching..." : "Fetch Emails"}
+          {loading ? "Fetching..." : syncing ? "Syncing..." : "Fetch Emails"}
         </button>
 
         <button

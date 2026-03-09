@@ -41,7 +41,11 @@ export async function parseWithAI(emailText) {
               - "username@okicici JOHN DOE" → "John Doe"
               - Remove: @domain, VPA handles, Ltd, Limited, Technologies, Pvt, Private, bank footer text
               - If merchant is a UPI refund from Google/PhonePe/Paytm, merchant = "Google Pay" / "PhonePe" / "Paytm"
-              - If no clear merchant, return null
+              - If merchant is a recognizable brand, extract shortest name: "ZOMATO TECHNOLOGIES LIMITED" → "Zomato"
+              - If merchant is a person name (e.g. "JOHN DOE"), keep as is
+              - If UPI ID contains a recognizable name before @domain (e.g. "akshayerode@okicici" → "Akshay", "johnsmith@oksbi" → "John Smith"), extract the name part only
+              - If UPI ID is only numbers or random characters (e.g. "q116634843@ybl", "7708891810@pthdfc"), keep the full UPI ID as merchant
+              - Remove @domain only when a real name exists alongside it: "username@okicici JOHN DOE" → "John Doe"
 
               Category rules:
               - FOOD: Zomato, Swiggy, restaurants, food delivery, cafes
