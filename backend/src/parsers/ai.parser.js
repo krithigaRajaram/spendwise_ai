@@ -12,46 +12,53 @@ export async function parseWithAI(emailText) {
       messages: [
         {
           role: "user",
-            content: `You are a financial data extractor for Indian bank transaction emails.
+           content: `You are a financial data extractor for Indian bank transaction alert emails.
 
-            Extract transaction details and return ONLY a valid JSON object:
+              Extract transaction details and return ONLY a valid JSON object:
 
-            {
-              "amount": <extract the transaction amount as a number with decimals>,
-              "type": <"EXPENSE" or "INCOME">,
-              "merchant": <clean short name, see rules>,
-              "category": <see category rules below>,
-              "date": <"DD-MM-YY" or null>
-            }
+              {
+                "amount": <transaction amount as number with decimals>,
+                "type": <"EXPENSE" or "INCOME">,
+                "merchant": <clean short merchant name>,
+                "category": <category from rules below>,
+                "date": <"DD-MM-YY" or null>
+              }
 
-            Amount rules:
-            - The transaction amount always appears near "Rs." or "INR" in the email
-            - "Rs. 163.00" = 163.00, "Rs. 2.00" = 2.00. Preserve decimals exactly.
-            - Do NOT extract unit counts, NAV values, or percentages as the amount
+              Amount rules:
+              - Look for patterns like "Rs.299.00", "Rs. 108.57", "INR 299.00"
+              - Preserve decimals exactly. "Rs.299.00" = 299.00
+              - Do NOT extract card numbers, phone numbers, or reference numbers as amount
 
-            Type rules:
-            - "debited" or "deducted" = EXPENSE
-            - "credited" or "received" = INCOME
+              Type rules:
+              - "debited", "deducted", "paid" = EXPENSE
+              - "credited", "received", "refund" = INCOME
 
-            Merchant rules:
-            - Extract shortest recognizable name only
-            - Remove VPA handles, @domain suffixes, Ltd, Limited, Technologies, Pvt, Private
-            - "username@okicici JOHN DOE" → "John Doe"
-            - "ZOMATO TECHNOLOGIES LIMITED" → "Zomato"
+              Merchant rules:
+              - Extract the shortest recognizable brand or person name
+              - "YOUTUBEGOOGLE" → "YouTube"
+              - "gpayrefund-online@axisbank Google India Digital Services Pvt Ltd" → "Google Pay"
+              - "ZOMATO TECHNOLOGIES LIMITED" → "Zomato"
+              - "username@okicici JOHN DOE" → "John Doe"
+              - Remove: @domain, VPA handles, Ltd, Limited, Technologies, Pvt, Private, bank footer text
+              - If merchant is a UPI refund from Google/PhonePe/Paytm, merchant = "Google Pay" / "PhonePe" / "Paytm"
+              - If no clear merchant, return null
 
-            Category rules (pick the best match):
-            - FOOD: Zomato, Swiggy, restaurants, food delivery, cafes
-            - TRAVEL: Uber, Ola, RedBus, IRCTC, MakeMyTrip, airlines, cab, bus, train
-            - SHOPPING: Amazon, Flipkart, Myntra, Meesho, Ajio, retail stores
-            - SUBSCRIPTION: Netflix, Spotify, Prime, Hotstar, JioCinema, YouTube, SaaS
-            - GROCERIES: Zepto, Blinkit, BigBasket, More, Dunzo, Swiggy Instamart
-            - INVESTMENT: Zerodha, Groww, Motilal Oswal, PPFAS, mutual fund, SIP, demat
-            - TRANSFER: person names, phone numbers, UPI to individuals
-            - UNCATEGORIZED: anything that doesn't fit above
+              Category rules:
+              - FOOD: Zomato, Swiggy, restaurants, food delivery, cafes
+              - TRAVEL: Uber, Ola, RedBus, IRCTC, MakeMyTrip, airlines, cab, bus, train, rapido
+              - SHOPPING: Amazon, Flipkart, Myntra, Meesho, Ajio, retail stores
+              - SUBSCRIPTION: Netflix, Spotify, Prime, Hotstar, JioCinema, YouTube, Google, Apple, SaaS, e-mandate, auto payment
+              - GROCERIES: Zepto, Blinkit, BigBasket, More, Dunzo, Swiggy Instamart
+              - INVESTMENT: Zerodha, Groww, Motilal Oswal, PPFAS, mutual fund, SIP, demat, stocks
+              - TRANSFER: person names, phone numbers, UPI to individuals, refunds from payment apps
+              - UNCATEGORIZED: anything that doesn't fit above
 
-            Return ONLY the JSON object, no explanation, no markdown.
+              Important:
+              - Focus only on the transaction details, ignore bank footer/disclaimer text
+              - The email may contain HTML — ignore all tags and focus on the text content
+              - Return ONLY the JSON object, no explanation, no markdown
 
-            Email: "${emailText}"`
+              Email: "${emailText}"`
         }
       ],
       max_tokens: 200,

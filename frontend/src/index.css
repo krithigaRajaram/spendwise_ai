@@ -500,7 +500,39 @@ body {
   min-height: 500px;
 }
 
+.report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
 
+.report-filters {
+  display: flex;
+  gap: 12px;
+}
+
+.report-select {
+  background: #2a2c31;
+  color: #ffffff;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  outline: none;
+}
+
+.report-select:focus {
+  border-color: #7c6cf0;
+}
+
+.no-data {
+  text-align: center;
+  color: #b0b3b8;
+  margin-top: 60px;
+  font-size: 16px;
+}
 /* LEFT SIDE */
 
 .category-panel {

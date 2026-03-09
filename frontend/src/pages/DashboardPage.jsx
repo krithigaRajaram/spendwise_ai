@@ -28,6 +28,9 @@ function DashboardPage() {
       setGmailConnected(true);
       setSearchParams({});
 
+      //Auto-trigger fetch after Gmail connect
+      fetchEmails();
+      
       setTimeout(() => {
         setGmailConnected(false);
       }, 4000);

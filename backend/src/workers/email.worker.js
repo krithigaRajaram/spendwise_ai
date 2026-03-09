@@ -24,7 +24,7 @@ function cleanHtml(html) {
     .replace(/&gt;/g, ">")
     .replace(/\s+/g, " ")
     .trim()
-    .substring(0, 1000);
+    .substring(0, 2000);
 }
 
 const worker = new Worker(
