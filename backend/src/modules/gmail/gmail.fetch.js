@@ -10,28 +10,40 @@ export const fetchAndStoreEmails = async (userId) => {
     where: { userId }
   });
 
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
   const afterTs = syncState
     ? Math.floor(syncState.lastFetchedAt.getTime() / 1000)
-    : null;
+    : Math.floor(oneMonthAgo.getTime() / 1000);
 
   console.log("Fetching Gmail messages after:", afterTs);
 
-  const listRes = await gmail.users.messages.list({
-    userId: "me",
-    maxResults: 20,
-    q: afterTs ? `after:${afterTs}` : undefined
-  });
+  // Paginate through all results
+  let messages = [];
+  let pageToken = undefined;
 
-  const messages = listRes.data.messages || [];
-  console.log(`${messages.length} messages received from Gmail`);
+  do {
+    const listRes = await gmail.users.messages.list({
+      userId: "me",
+      q: `after:${afterTs}`,
+      ...(pageToken && { pageToken })
+    });
+
+    const batch = listRes.data.messages || [];
+    messages = messages.concat(batch);
+    pageToken = listRes.data.nextPageToken;
+
+    console.log(`Fetched ${batch.length} messages (total: ${messages.length})`);
+  } while (pageToken);
+
+  console.log(`${messages.length} total messages received from Gmail`);
 
   let maxInternalDate = syncState?.lastFetchedAt || null;
 
   for (const msg of messages) {
     const exists = await prisma.rawEmail.findUnique({
-      where: {
-        userId_gmailId: { userId, gmailId: msg.id }
-      }
+      where: { userId_gmailId: { userId, gmailId: msg.id } }
     });
     if (exists) continue;
 
@@ -58,10 +70,7 @@ export const fetchAndStoreEmails = async (userId) => {
       }
     });
 
-    await emailQueue.add("process-email", {
-      rawEmailId: raw.id
-    });
-
+    await emailQueue.add("process-email", { rawEmailId: raw.id });
     console.log("Job enqueued for RawEmail:", raw.id);
 
     if (!maxInternalDate || internalDate > maxInternalDate) {
@@ -83,11 +92,14 @@ export const fetchAndStoreEmails = async (userId) => {
 export async function fetchGmailMessages(req, res) {
   try {
     const userId = req.userId;
-    if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
-    }
-    await fetchAndStoreEmails(userId);
-    res.json({ status: "Gmail fetch started" });
+    if (!userId) return res.status(401).json({ error: "User not authenticated" });
+
+    // Start fetch in background, don't await
+    fetchAndStoreEmails(userId).catch(err =>
+      console.error("Background fetch error:", err)
+    );
+
+    res.json({ status: "syncing" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to start fetch" });

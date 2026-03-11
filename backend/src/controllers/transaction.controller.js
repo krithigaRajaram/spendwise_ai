@@ -25,7 +25,9 @@ export const createTransaction = async (req, res) => {
         category,
         merchant: merchant ? merchant.trim() : "Manual Entry",
         date: date ? new Date(date) : new Date(),
-        userId: req.userId
+        userId: req.userId,
+        source: "MANUAL"
+
       }
     });
 
@@ -41,14 +43,24 @@ export const createTransaction = async (req, res) => {
 // GET /transactions
 export const getTransactions = async (req, res) => {
   try {
+    const { month, year } = req.query;
+
+    let dateFilter = {};
+
+    if (month && year) {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0, 23, 59, 59);
+      dateFilter = {
+        date: { gte: startDate, lte: endDate }
+      };
+    }
 
     const transactions = await prisma.transaction.findMany({
-      where: { userId: req.userId },
+      where: { userId: req.userId, ...dateFilter },
       orderBy: { date: "desc" }
     });
 
     res.json(transactions);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch transactions" });
@@ -119,8 +131,7 @@ export const updateTransaction = async (req, res) => {
     const { id } = req.params;
     const userId = req.userId;
 
-    const { amount, type, category, merchant, date } = req.body;
-
+    const { amount, type, category, merchant, date, mapMerchant } = req.body;
     const existingTx = await prisma.transaction.findFirst({
       where: {
         id: Number(id),
@@ -144,8 +155,7 @@ export const updateTransaction = async (req, res) => {
     });
 
     // merchant -> category learning
-    if (category && existingTx.merchant) {
-
+    if (mapMerchant && category && existingTx.merchant) {
       await prisma.merchantCategory.upsert({
         where: {
           userId_merchantKeyword: {
@@ -153,9 +163,7 @@ export const updateTransaction = async (req, res) => {
             merchantKeyword: existingTx.merchant.toLowerCase()
           }
         },
-        update: {
-          category
-        },
+        update: { category },
         create: {
           userId,
           merchantKeyword: existingTx.merchant.toLowerCase(),

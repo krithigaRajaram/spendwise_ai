@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "../config";
 
-function Navbar({ onFetchEmails, loading }) {
+function Navbar({ onFetchEmails, loading, syncing }) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -10,9 +10,10 @@ function Navbar({ onFetchEmails, loading }) {
     navigate("/login");
   };
 
-  const connectGmail = () => {
-    window.location.href = `${API_BASE_URL}/gmail/auth`;
-  };
+const connectGmail = () => {
+  const token = localStorage.getItem("token");
+  window.location.href = `${API_BASE_URL}/gmail/auth?token=${token}`;
+};
 
   const goDashboard = () => {
     navigate("/dashboard");
@@ -36,9 +37,9 @@ function Navbar({ onFetchEmails, loading }) {
         <button
           className="btn btn-info"
           onClick={onFetchEmails}
-          disabled={loading}
+          disabled={loading || syncing}
         >
-          {loading ? "Fetching..." : "Fetch Emails"}
+          {loading ? "Fetching..." : syncing ? "Syncing..." : "Fetch Emails"}
         </button>
 
         <button

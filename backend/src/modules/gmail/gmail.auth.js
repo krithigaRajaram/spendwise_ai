@@ -11,7 +11,8 @@ export const startGmailAuth = (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: ["https://www.googleapis.com/auth/gmail.readonly"],
-    prompt: "consent"
+    prompt: "consent",
+    state: String(req.userId)
   });
 
   res.redirect(url);
@@ -19,16 +20,21 @@ export const startGmailAuth = (req, res) => {
 
 export const gmailCallback = async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, state } = req.query;
 
     if (!code) {
       return res.status(400).send("Missing authorization code");
     }
 
+    const userId = Number(state);
+
+    if (!userId) {
+      return res.status(400).send("Missing user identity");
+    }
+
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    const userId = req.user?.id || 1;
     await prisma.gmailToken.upsert({
       where: { userId },
       update: {

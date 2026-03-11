@@ -9,6 +9,7 @@ function DashboardPage() {
   const [gmailConnected, setGmailConnected] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
 
@@ -26,6 +27,11 @@ function DashboardPage() {
     if (gmailStatus === "connected") {
       setGmailConnected(true);
       setSearchParams({});
+
+      // Wait 2 seconds before auto-fetch to ensure token is ready
+      setTimeout(() => {
+        fetchEmails();
+      }, 2000);
 
       setTimeout(() => {
         setGmailConnected(false);
@@ -45,14 +51,23 @@ function DashboardPage() {
         },
       });
 
-      setTimeout(() => {
-        setRefreshKey((prev) => prev + 1);
-        setLoading(false);
-      }, 3000);
+      setLoading(false);
+      setSyncing(true);
+
+      // Refresh transactions after a short delay so first batch appears
+      setTimeout(() => setRefreshKey((prev) => prev + 1), 5000);
+
+      // Keep refreshing every 10 seconds for 30 seconds
+      setTimeout(() => setRefreshKey((prev) => prev + 1), 15000);
+      setTimeout(() => setRefreshKey((prev) => prev + 1), 30000);
+
+      // Hide syncing banner after 30 seconds
+      setTimeout(() => setSyncing(false), 30000);
 
     } catch (err) {
       console.error("Fetch failed:", err);
       setLoading(false);
+      setSyncing(false);
     }
   };
 
@@ -95,8 +110,7 @@ function DashboardPage() {
 
   return (
     <>
-      <Navbar onFetchEmails={fetchEmails} loading={loading} />
-
+      <Navbar onFetchEmails={fetchEmails} loading={loading} syncing={syncing} />
       <div className="dashboard-container">
 
         {gmailConnected && (
@@ -107,7 +121,19 @@ function DashboardPage() {
 
         {loading && (
           <div className="info-banner">
-            Fetching latest transactions...
+            Contacting Gmail...
+          </div>
+        )}
+
+        {syncing && (
+          <div className="info-banner" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span>⏳ Syncing emails in background, transactions will appear shortly...</span>
+            <button
+              onClick={() => { setSyncing(false); setRefreshKey((prev) => prev + 1); }}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "16px" }}
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -122,73 +148,64 @@ function DashboardPage() {
         </div>
 
         {showForm && (
-  <div className="manual-transaction-card">
+          <div className="manual-transaction-card">
+            <h3 className="manual-transaction-title">Add Transaction</h3>
 
-    <h3 className="manual-transaction-title">
-      Add Transaction
-    </h3>
+            <form className="manual-form" onSubmit={addTransaction}>
+              <input
+                name="amount"
+                placeholder="Amount"
+                value={formData.amount}
+                onChange={handleChange}
+                required
+              />
 
-    <form className="manual-form" onSubmit={addTransaction}>
+              <select name="type" value={formData.type} onChange={handleChange}>
+                <option value="EXPENSE">Expense</option>
+                <option value="INCOME">Income</option>
+              </select>
 
-      <input
-        name="amount"
-        placeholder="Amount"
-        value={formData.amount}
-        onChange={handleChange}
-        required
-      />
+              <input
+                name="category"
+                placeholder="Category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              />
 
-      <select
-        name="type"
-        value={formData.type}
-        onChange={handleChange}
-      >
-        <option value="EXPENSE">Expense</option>
-        <option value="INCOME">Income</option>
-      </select>
+              <input
+                name="merchant"
+                placeholder="Merchant (optional)"
+                value={formData.merchant}
+                onChange={handleChange}
+              />
 
-      <input
-        name="category"
-        placeholder="Category"
-        value={formData.category}
-        onChange={handleChange}
-        required
-      />
+              <input
+                type="date"
+                name="date"
+                className="full-width"
+                value={formData.date}
+                onChange={handleChange}
+              />
 
-      <input
-        name="merchant"
-        placeholder="Merchant (optional)"
-        value={formData.merchant}
-        onChange={handleChange}
-      />
+              <div className="manual-form-actions">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowForm(false)}
+                >
+                  Cancel
+                </button>
 
-      <input
-        type="date"
-        name="date"
-        className="full-width"
-        value={formData.date}
-        onChange={handleChange}
-      />
+                <button className="btn-primary" type="submit">
+                  Save Transaction
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
-      <div className="manual-form-actions">
-        <button
-          type="button"
-          className="btn-secondary"
-          onClick={() => setShowForm(false)}
-        >
-          Cancel
-        </button>
-
-        <button className="btn-primary" type="submit">
-          Save Transaction
-        </button>
-      </div>
-
-    </form>
-  </div>
-)}
         <TransactionList refreshKey={refreshKey} />
-
       </div>
     </>
   );
