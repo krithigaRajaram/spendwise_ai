@@ -62,15 +62,13 @@ import {
   Tags,
 } from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+
 const EMPTY_FORM = {
   amount: "",
   type: "EXPENSE",
   category: "",
   merchant: "",
-  date: null, // now a Date object or null
+  date: null,
 };
 
 function formatCurrency(amount) {
@@ -92,9 +90,6 @@ function formatDate(dateStr) {
   });
 }
 
-// ---------------------------------------------------------------------------
-// DashboardPage
-// ---------------------------------------------------------------------------
 function DashboardPage({ onLogout }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [gmailConnected, setGmailConnected] = useState(false);
@@ -106,18 +101,13 @@ function DashboardPage({ onLogout }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [formSaving, setFormSaving] = useState(false);
 
-  // Inline edit — only category
   const [editingId, setEditingId] = useState(null);
   const [editCategory, setEditCategory] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
-  // pendingEdit = { id, merchant, newCategory, oldCategory }
   const [pendingEdit, setPendingEdit] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  // ---------------------------------------------------------------------------
-  // Data fetching
-  // ---------------------------------------------------------------------------
   const fetchTransactions = useCallback(async () => {
     try {
       setTxLoading(true);
@@ -145,11 +135,12 @@ function DashboardPage({ onLogout }) {
       setTimeout(() => fetchEmails(), 2000);
       setTimeout(() => setGmailConnected(false), 4000);
     }
+    if (gmailStatus === "already_connected") {
+    setSearchParams({});
+    alert("This Gmail account is already connected to another user.");
+  }
   }, [searchParams]);
 
-  // ---------------------------------------------------------------------------
-  // Gmail sync
-  // ---------------------------------------------------------------------------
   const fetchEmails = async () => {
     try {
       setLoading(true);
@@ -173,16 +164,12 @@ function DashboardPage({ onLogout }) {
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Add Transaction
-  // ---------------------------------------------------------------------------
   const handleFormChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSelectChange = (name, value) =>
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-  // Date picker sets a Date object
   const handleDateChange = (date) => setFormData((prev) => ({ ...prev, date }));
 
   const addTransaction = async (e) => {
@@ -214,9 +201,6 @@ function DashboardPage({ onLogout }) {
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Inline Category Edit
-  // ---------------------------------------------------------------------------
   const startEdit = (tx) => {
     setEditingId(tx.id);
     setEditCategory(tx.category ?? "");
@@ -247,9 +231,6 @@ function DashboardPage({ onLogout }) {
     if (e.key === "Escape") cancelEdit();
   };
 
-  // ---------------------------------------------------------------------------
-  // Apply category scope
-  // ---------------------------------------------------------------------------
   const applyCategory = async (applyToAll) => {
     if (!pendingEdit) return;
     const { id, merchant, newCategory } = pendingEdit;
@@ -283,9 +264,6 @@ function DashboardPage({ onLogout }) {
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Delete
-  // ---------------------------------------------------------------------------
   const deleteTransaction = async (id) => {
     try {
       await fetch(`${API_BASE_URL}/transactions/${id}`, {
@@ -299,9 +277,6 @@ function DashboardPage({ onLogout }) {
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
   return (
     <>
       <Navbar onFetchEmails={fetchEmails} loading={loading} syncing={syncing} onLogout={onLogout} />
