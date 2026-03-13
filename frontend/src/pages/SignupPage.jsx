@@ -12,18 +12,22 @@ function SignupPage({ onAuth }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const signup = async () => {
+    if (!name.trim() || !email.trim() || !password.trim()) {
+    alert("Name, email and password are all required");
+    return;
+    }
     try {
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
-
-      if (!response.ok) {
-        throw new Error("Signup failed");
-      }
-
       const data = await response.json();
+      if (!response.ok) {
+          alert(data.error || "Signup failed");
+              return;      
+        }
+        
       localStorage.setItem("token", data.token);
       onAuth();
       navigate("/dashboard");
