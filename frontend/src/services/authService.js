@@ -18,6 +18,7 @@ export const loginUser = async (email, password) => {
   return data;
 };
 
+// have an endpoint for user logout
 export const logoutUser = () => {
   localStorage.removeItem("token");
 };
