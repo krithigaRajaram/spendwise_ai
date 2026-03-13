@@ -18,7 +18,7 @@ import {
   Moon,
 } from "lucide-react";
 
-function Navbar({ onFetchEmails, loading, syncing }) {
+function Navbar({ onFetchEmails, loading, syncing, onLogout}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
@@ -26,6 +26,7 @@ function Navbar({ onFetchEmails, loading, syncing }) {
 
   const logout = () => {
     localStorage.removeItem("token");
+    onLogout();
     navigate("/login");
   };
 

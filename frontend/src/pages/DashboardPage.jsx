@@ -95,7 +95,7 @@ function formatDate(dateStr) {
 // ---------------------------------------------------------------------------
 // DashboardPage
 // ---------------------------------------------------------------------------
-function DashboardPage() {
+function DashboardPage({ onLogout }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [gmailConnected, setGmailConnected] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -304,7 +304,7 @@ function DashboardPage() {
   // ---------------------------------------------------------------------------
   return (
     <>
-      <Navbar onFetchEmails={fetchEmails} loading={loading} syncing={syncing} />
+      <Navbar onFetchEmails={fetchEmails} loading={loading} syncing={syncing} onLogout={onLogout} />
       <div className="px-8 py-6 max-w-7xl mx-auto space-y-5">
         {/* ── Banners ── */}
         {gmailConnected && (

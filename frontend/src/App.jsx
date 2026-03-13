@@ -10,7 +10,9 @@ function App() {
   const [authenticated, setAuthenticated] = useState(isAuthenticated());
 
   const handleAuthChange = () => setAuthenticated(isAuthenticated());
-
+  const handleLogout = () => {
+  setAuthenticated(false);
+};
   return (
     <Routes>
       <Route
@@ -29,7 +31,7 @@ function App() {
         path="/dashboard"
         element={
           authenticated
-            ? <DashboardPage />
+            ? <DashboardPage onLogout={handleLogout}/>
             : <Navigate to="/login" />
         }
       />
@@ -38,7 +40,7 @@ function App() {
         path="/report"
         element={
           authenticated
-            ? <ReportPage />
+            ? <ReportPage onLogout={handleLogout}/>
             : <Navigate to="/login" />
         }
       />
