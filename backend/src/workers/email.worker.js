@@ -85,7 +85,7 @@ const worker = new Worker(
 
       for (const tx of parsedTxs) {
         let finalCategory = tx.category || "UNCATEGORIZED";
-        let normalizedMerchant = normalizeMerchant(tx.merchant);
+        const normalizedMerchant = normalizeMerchant(tx.merchant);
 
         if (normalizedMerchant) {
           const existingMapping = await prisma.merchantCategory.findUnique({

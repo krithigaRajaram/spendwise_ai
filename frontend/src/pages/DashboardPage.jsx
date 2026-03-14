@@ -62,7 +62,6 @@ import {
   Tags,
 } from "lucide-react";
 
-
 const EMPTY_FORM = {
   amount: "",
   type: "EXPENSE",
@@ -93,6 +92,7 @@ function formatDate(dateStr) {
 function DashboardPage({ onLogout }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailAlreadyConnected, setGmailAlreadyConnected] = useState(false);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -101,13 +101,21 @@ function DashboardPage({ onLogout }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [formSaving, setFormSaving] = useState(false);
 
+  // Category edit
   const [editingId, setEditingId] = useState(null);
   const [editCategory, setEditCategory] = useState("");
   const [editSaving, setEditSaving] = useState(false);
-
   const [pendingEdit, setPendingEdit] = useState(null);
+
+  // Merchant edit
+  const [editingMerchantId, setEditingMerchantId] = useState(null);
+  const [editMerchant, setEditMerchant] = useState("");
+  const [merchantEditSaving, setMerchantEditSaving] = useState(false);
+  const [pendingMerchantEdit, setPendingMerchantEdit] = useState(null);
+
   const [deletingId, setDeletingId] = useState(null);
 
+  // Data fetching
   const fetchTransactions = useCallback(async () => {
     try {
       setTxLoading(true);
@@ -136,11 +144,12 @@ function DashboardPage({ onLogout }) {
       setTimeout(() => setGmailConnected(false), 4000);
     }
     if (gmailStatus === "already_connected") {
-    setSearchParams({});
-    alert("This Gmail account is already connected to another user.");
-  }
+      setGmailAlreadyConnected(true);
+      setSearchParams({});
+    }
   }, [searchParams]);
 
+  // Gmail sync
   const fetchEmails = async () => {
     try {
       setLoading(true);
@@ -164,6 +173,8 @@ function DashboardPage({ onLogout }) {
     }
   };
 
+
+  // Add Transaction
   const handleFormChange = (e) =>
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
@@ -176,13 +187,10 @@ function DashboardPage({ onLogout }) {
     e.preventDefault();
     try {
       setFormSaving(true);
-
-      // Convert Date → ISO string for the API
       const payload = {
         ...formData,
         date: formData.date ? format(formData.date, "yyyy-MM-dd") : "",
       };
-
       await fetch(`${API_BASE_URL}/transactions`, {
         method: "POST",
         headers: {
@@ -201,6 +209,7 @@ function DashboardPage({ onLogout }) {
     }
   };
 
+  // Category edit
   const startEdit = (tx) => {
     setEditingId(tx.id);
     setEditCategory(tx.category ?? "");
@@ -264,6 +273,70 @@ function DashboardPage({ onLogout }) {
     }
   };
 
+  // Merchant edit
+  const startMerchantEdit = (tx) => {
+    setEditingMerchantId(tx.id);
+    setEditMerchant(tx.merchantDisplay || tx.merchant || "");
+  };
+
+  const cancelMerchantEdit = () => {
+    setEditingMerchantId(null);
+    setEditMerchant("");
+  };
+
+  const requestMerchantSave = (tx) => {
+    const trimmed = editMerchant.trim();
+    if (!trimmed || trimmed === (tx.merchantDisplay || tx.merchant)) {
+      cancelMerchantEdit();
+      return;
+    }
+    setEditingMerchantId(null);
+    setPendingMerchantEdit({
+      id: tx.id,
+      originalMerchant: tx.merchant,
+      newMerchant: trimmed,
+    });
+  };
+
+  const handleMerchantEditKeyDown = (e, tx) => {
+    if (e.key === "Enter") requestMerchantSave(tx);
+    if (e.key === "Escape") cancelMerchantEdit();
+  };
+
+  const applyMerchant = async (applyToAll) => {
+    if (!pendingMerchantEdit) return;
+    const { id, originalMerchant, newMerchant } = pendingMerchantEdit;
+    try {
+      setMerchantEditSaving(true);
+      if (applyToAll && originalMerchant) {
+        await fetch(`${API_BASE_URL}/transactions/merchant-mapping`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ merchant: originalMerchant, merchantOverride: newMerchant }),
+        });
+      } else {
+        await fetch(`${API_BASE_URL}/transactions/${id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ merchant: newMerchant }),
+        });
+      }
+      setPendingMerchantEdit(null);
+      fetchTransactions();
+    } catch (err) {
+      console.error("Failed to update merchant:", err);
+    } finally {
+      setMerchantEditSaving(false);
+    }
+  };
+
+  // Delete
   const deleteTransaction = async (id) => {
     try {
       await fetch(`${API_BASE_URL}/transactions/${id}`, {
@@ -277,15 +350,27 @@ function DashboardPage({ onLogout }) {
     }
   };
 
+  // Render
   return (
     <>
       <Navbar onFetchEmails={fetchEmails} loading={loading} syncing={syncing} onLogout={onLogout} />
       <div className="px-8 py-6 max-w-7xl mx-auto space-y-5">
+
         {/* ── Banners ── */}
         {gmailConnected && (
           <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Gmail connected successfully.
+          </div>
+        )}
+        {gmailAlreadyConnected && (
+          <div className="flex items-center justify-between rounded-lg border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-rose-700 dark:text-rose-400 text-sm font-medium">
+            <span>This Gmail account is already connected to another user.</span>
+            <button
+              onClick={() => setGmailAlreadyConnected(false)}
+              className="ml-4 hover:opacity-60 transition-opacity">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
         {loading && (
@@ -367,7 +452,8 @@ function DashboardPage({ onLogout }) {
                 </TableRow>
               ) : (
                 transactions.map((tx) => {
-                  const isEditing = editingId === tx.id;
+                  const isEditingCategory = editingId === tx.id;
+                  const isEditingMerchant = editingMerchantId === tx.id;
                   const isIncome = tx.type === "INCOME";
                   return (
                     <TableRow
@@ -376,11 +462,45 @@ function DashboardPage({ onLogout }) {
                       <TableCell className="pl-6 py-3.5 text-sm text-muted-foreground">
                         {formatDate(tx.date)}
                       </TableCell>
+
+                      {/* ── Merchant Cell ── */}
                       <TableCell className="py-3.5 text-sm font-medium text-foreground">
-                        {tx.merchant || "—"}
+                        {isEditingMerchant ? (
+                          <div className="flex items-center gap-1.5">
+                            <Input
+                              value={editMerchant}
+                              onChange={(e) => setEditMerchant(e.target.value)}
+                              onKeyDown={(e) => handleMerchantEditKeyDown(e, tx)}
+                              autoFocus
+                              className="h-7 w-36 text-xs"
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10"
+                              onClick={() => requestMerchantSave(tx)}>
+                              <Check className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
+                              onClick={cancelMerchantEdit}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span
+                            className="cursor-pointer hover:text-muted-foreground transition-colors"
+                            onClick={() => startMerchantEdit(tx)}>
+                            {tx.merchantDisplay || tx.merchant || "—"}
+                          </span>
+                        )}
                       </TableCell>
+
+                      {/* ── Category Cell ── */}
                       <TableCell className="py-3.5">
-                        {isEditing ? (
+                        {isEditingCategory ? (
                           <div className="flex items-center gap-1.5">
                             <Input
                               value={editCategory}
@@ -410,6 +530,7 @@ function DashboardPage({ onLogout }) {
                           </span>
                         )}
                       </TableCell>
+
                       <TableCell className="py-3.5">
                         <Badge
                           className={
@@ -438,14 +559,12 @@ function DashboardPage({ onLogout }) {
                             variant="ghost"
                             className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={() => startEdit(tx)}
-                            disabled={isEditing}>
+                            disabled={isEditingCategory}>
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <AlertDialog
                             open={deletingId === tx.id}
-                            onOpenChange={(open) =>
-                              !open && setDeletingId(null)
-                            }>
+                            onOpenChange={(open) => !open && setDeletingId(null)}>
                             <AlertDialogTrigger asChild>
                               <Button
                                 size="icon"
@@ -463,11 +582,9 @@ function DashboardPage({ onLogout }) {
                                 <AlertDialogDescription className="text-muted-foreground">
                                   This will permanently remove{" "}
                                   <span className="text-foreground font-medium">
-                                    {tx.merchant || "this transaction"}
+                                    {tx.merchantDisplay || tx.merchant || "this transaction"}
                                   </span>
-                                  {tx.amount
-                                    ? ` (${formatCurrency(tx.amount)})`
-                                    : ""}
+                                  {tx.amount ? ` (${formatCurrency(tx.amount)})` : ""}
                                   . This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
@@ -512,8 +629,7 @@ function DashboardPage({ onLogout }) {
                   </span>
                   {pendingEdit?.merchant && (
                     <>
-                      {" "}
-                      for{" "}
+                      {" "}for{" "}
                       <span className="text-foreground font-semibold">
                         {pendingEdit.merchant}
                       </span>
@@ -559,6 +675,67 @@ function DashboardPage({ onLogout }) {
           </DialogContent>
         </Dialog>
 
+        {/* ── Merchant Scope Confirmation Dialog ── */}
+        <Dialog
+          open={!!pendingMerchantEdit}
+          onOpenChange={(open) => {
+            if (!open && !merchantEditSaving) setPendingMerchantEdit(null);
+          }}>
+          <DialogContent className="sm:max-w-[500px] bg-card border-border p-0 overflow-hidden">
+            <div className="px-6 pt-6 pb-2">
+              <DialogHeader>
+                <DialogTitle className="text-base text-foreground">
+                  Apply merchant name change
+                </DialogTitle>
+                <DialogDescription className="text-muted-foreground text-sm pt-1">
+                  You're renaming{" "}
+                  <span className="text-foreground font-semibold">
+                    {pendingMerchantEdit?.originalMerchant}
+                  </span>{" "}
+                  to{" "}
+                  <span className="text-foreground font-semibold">
+                    {pendingMerchantEdit?.newMerchant}
+                  </span>
+                  . How would you like to apply this?
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="px-6 pb-6 pt-3 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => applyMerchant(false)}
+                disabled={merchantEditSaving}
+                className="group flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-border/80 p-4 text-left transition-all disabled:opacity-50 cursor-pointer">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background group-hover:bg-muted transition-colors border border-border">
+                  <Tag className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+                <p className="text-sm font-medium text-foreground leading-snug">
+                  This transaction only
+                </p>
+              </button>
+              <button
+                onClick={() => applyMerchant(true)}
+                disabled={merchantEditSaving}
+                className="group flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-border/80 p-4 text-left transition-all disabled:opacity-50 cursor-pointer">
+                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background group-hover:bg-muted transition-colors border border-border">
+                  <Tags className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                </div>
+                <p className="text-sm font-medium text-foreground leading-snug">
+                  All from{" "}
+                  <span className="font-semibold">
+                    {pendingMerchantEdit?.originalMerchant || "this merchant"}
+                  </span>
+                </p>
+              </button>
+            </div>
+            {merchantEditSaving && (
+              <div className="border-t border-border px-6 py-3 flex items-center gap-2 text-muted-foreground text-xs bg-muted/30">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Applying changes…
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
         {/* ── Add Transaction Dialog ── */}
         <Dialog
           open={showAddDialog}
@@ -574,7 +751,6 @@ function DashboardPage({ onLogout }) {
             </DialogHeader>
 
             <form onSubmit={addTransaction} className="space-y-4 pt-2">
-              {/* Amount + Type */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="amount">Amount</Label>
@@ -603,7 +779,6 @@ function DashboardPage({ onLogout }) {
                 </div>
               </div>
 
-              {/* Category */}
               <div className="space-y-1.5">
                 <Label htmlFor="category">Category</Label>
                 <Input
@@ -616,7 +791,6 @@ function DashboardPage({ onLogout }) {
                 />
               </div>
 
-              {/* Merchant */}
               <div className="space-y-1.5">
                 <Label htmlFor="merchant">
                   Merchant{" "}
@@ -633,7 +807,6 @@ function DashboardPage({ onLogout }) {
                 />
               </div>
 
-              {/* Date — ShadCN Date Picker */}
               <div className="space-y-1.5">
                 <Label>Date</Label>
                 <Popover>

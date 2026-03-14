@@ -70,6 +70,7 @@ model MerchantCategory {
   userId          Int
   merchantKeyword String
   category        String
+  merchantOverride String?
   createdAt       DateTime @default(now())
   user            User     @relation(fields: [userId], references: [id])
 
