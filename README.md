@@ -192,6 +192,32 @@ Frontend runs at `http://localhost:5173`
 | GET | `/gmail/callback` | OAuth2 callback (handled by Google redirect) |
 | POST | `/gmail/fetch` | Trigger email fetch and processing |
 
+### Transaction Category & Merchant Mapping
+| Method | Endpoint | Description |
+|---|---|---|
+| PUT | `/transactions/:id` | Update category or merchant for a single transaction |
+| PUT | `/transactions/bulk-categorize` | Update category for all transactions from a merchant + save to merchant mapping |
+| PUT | `/transactions/merchant-mapping` | Save a display name override for a merchant (stored in merchant mapping, original merchant preserved in transactions) |
+| GET | `/transactions/merchant-categories` | Get all merchant → category/display name mappings for the user |
+
+#### Request Bodies
+
+**PUT `/transactions/:id`**
+```json
+{ "category": "FOOD" }
+// or
+{ "merchant": "Swiggy" }
+```
+
+**PUT `/transactions/bulk-categorize`**
+```json
+{ "merchant": "swiggy123@upi", "category": "FOOD" }
+```
+
+**PUT `/transactions/merchant-mapping`**
+```json
+{ "merchant": "swiggy123@upi", "merchantOverride": "Swiggy" }
+```
 ---
 
 ## How It Works
