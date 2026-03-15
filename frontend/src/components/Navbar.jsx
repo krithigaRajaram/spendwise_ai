@@ -5,7 +5,8 @@ import { useTheme } from "../contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import SpendWiseLogo from "@/assets/svgs/SpendWiseLogo.svg?react";
+import logoWhite from "@/assets/svgs/SpendWiseLogoWhite.png";
+import logoBlack from "@/assets/svgs/SpendWiseLogoBlack.png";
 import { Badge } from "@/components/ui/badge";
 import {
   Menu,
@@ -127,7 +128,7 @@ function Navbar({ onFetchEmails, loading, syncing, onLogout}) {
           <div
             className="flex items-center gap-3 cursor-pointer select-none group"
             onClick={goDashboard}>
-            <SpendWiseLogo className="h-8 w-8" />
+            <img src={isDark ? logoWhite : logoBlack} alt="SpendWise Logo" className="h-8 w-8" />
             <span className="text-lg font-bold tracking-tight">
               SpendWise <span>AI</span>
             </span>
@@ -156,7 +157,7 @@ function Navbar({ onFetchEmails, loading, syncing, onLogout}) {
                     goDashboard();
                     setMobileOpen(false);
                   }}>
-                  <SpendWiseLogo className="h-8 w-8" />
+                  <img src={isDark ? logoWhite : logoBlack} alt="SpendWise Logo" className="h-8 w-8" />
                   <span className="text-base font-bold">
                     SpendWise <span>AI</span>
                   </span>
