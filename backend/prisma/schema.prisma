@@ -62,6 +62,9 @@ model RawEmail {
 model GmailSyncState {
   userId        Int      @id
   lastFetchedAt DateTime
+  disconnectedAt DateTime?
+  oneMonthWarningSent Boolean   @default(false)
+  twoMonthWarningSent Boolean   @default(false)
   user          User     @relation(fields: [userId], references: [id])
 }
 
