@@ -10,16 +10,49 @@ export const fetchAndStoreEmails = async (userId) => {
     where: { userId }
   });
 
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
-  const afterTs = syncState
-    ? Math.floor(syncState.lastFetchedAt.getTime() / 1000)
-    : Math.floor(oneMonthAgo.getTime() / 1000);
+  let afterTs;
+
+  if (syncState?.lastFetchedAt) {
+    // Cap at 3 months — whichever is more recent
+    const fetchFrom = new Date(Math.max(
+      new Date(syncState.lastFetchedAt).getTime(),
+      threeMonthsAgo.getTime()
+    ));
+    afterTs = Math.floor(fetchFrom.getTime() / 1000);
+  } else {
+    // First time — fetch last 1 month
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    afterTs = Math.floor(oneMonthAgo.getTime() / 1000);
+  }
+
+  // Cancel inactivity jobs and clear disconnectedAt on reconnect
+  if (syncState?.disconnectedAt) {
+    const job1m = await emailQueue.getJob(`inactivity-1m-${userId}`);
+    const job2m = await emailQueue.getJob(`inactivity-2m-${userId}`);
+    const jobDelete = await emailQueue.getJob(`inactivity-delete-${userId}`);
+
+    if (job1m) await job1m.remove();
+    if (job2m) await job2m.remove();
+    if (jobDelete) await jobDelete.remove();
+
+    console.log(`Inactivity jobs cancelled for userId ${userId}`);
+
+    await prisma.gmailSyncState.update({
+      where: { userId },
+      data: {
+        disconnectedAt: null,
+        oneMonthWarningSent: false,
+        twoMonthWarningSent: false
+      }
+    });
+  }
 
   console.log("Fetching Gmail messages after:", afterTs);
 
-  // Paginate through all results
   let messages = [];
   let pageToken = undefined;
 
@@ -33,7 +66,6 @@ export const fetchAndStoreEmails = async (userId) => {
     const batch = listRes.data.messages || [];
     messages = messages.concat(batch);
     pageToken = listRes.data.nextPageToken;
-
     console.log(`Fetched ${batch.length} messages (total: ${messages.length})`);
   } while (pageToken);
 
@@ -84,7 +116,6 @@ export const fetchAndStoreEmails = async (userId) => {
       update: { lastFetchedAt: maxInternalDate },
       create: { userId, lastFetchedAt: maxInternalDate }
     });
-
     console.log("Gmail sync updated to:", maxInternalDate);
   }
 };
@@ -94,7 +125,6 @@ export async function fetchGmailMessages(req, res) {
     const userId = req.userId;
     if (!userId) return res.status(401).json({ error: "User not authenticated" });
 
-    // Start fetch in background, don't await
     fetchAndStoreEmails(userId).catch(err =>
       console.error("Background fetch error:", err)
     );

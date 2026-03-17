@@ -1,10 +1,10 @@
 import { Queue } from "bullmq";
-import IORedis from "ioredis";
 
-const connection = new IORedis({
-  host: process.env.REDIS_HOST,
-  port: process.env.REDIS_PORT,
-});
+const connection = {
+  host: process.env.REDIS_HOST || "localhost",
+  port: Number(process.env.REDIS_PORT || 6379),
+  maxRetriesPerRequest: null
+};
 
 export const emailQueue = new Queue(
   process.env.QUEUE_NAME || "email-queue",

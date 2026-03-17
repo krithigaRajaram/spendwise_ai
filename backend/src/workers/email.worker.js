@@ -3,6 +3,7 @@ import prisma from "../config/prisma.js";
 import { extractEmailBody } from "../utils/email.util.js";
 import { parseHdfcEmail } from "../parsers/hdfc.parser.js";
 import { parseWithAI } from "../parsers/ai.parser.js";
+import { handleInactivityWarning, handleInactivityDelete } from "../modules/gmail/gmail.cleanup.js";
 
 function normalizeMerchant(merchant) {
   if (!merchant) return null;
@@ -34,6 +35,21 @@ const worker = new Worker(
   "email-queue",
   async (job) => {
     try {
+      // Handle inactivity warning job
+      if (job.name === "inactivity-warning") {
+        const { userId, type } = job.data;
+        await handleInactivityWarning(userId, type);
+        return;
+      }
+
+      // Handle inactivity delete job
+      if (job.name === "inactivity-delete") {
+        const { userId } = job.data;
+        await handleInactivityDelete(userId);
+        return;
+      }
+
+      // Default — process email
       const { rawEmailId } = job.data;
       console.log("Job received:", rawEmailId);
 
@@ -62,13 +78,10 @@ const worker = new Worker(
       if (!rawEmail.bankName) return;
 
       const cleanBody = cleanHtml(emailBody);
-      console.log("Clean email body sent to AI:", cleanBody);
-
       let parsedTxs = [];
 
       try {
         const aiResult = await parseWithAI(cleanBody);
-        console.log("AI result:", JSON.stringify(aiResult));
         parsedTxs = [{ ...aiResult, source: "AI" }];
         console.log("AI parsing succeeded");
       } catch (err) {
