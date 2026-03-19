@@ -8,7 +8,6 @@ export const deleteUserCompletely = async (userId) => {
   await prisma.gmailSyncState.deleteMany({ where: { userId } });
   await prisma.gmailToken.deleteMany({ where: { userId } });
   await prisma.user.delete({ where: { id: userId } });
-  console.log(`User ${userId} deleted due to 3 months inactivity`);
 };
 
 export const handleInactivityWarning = async (userId, type) => {

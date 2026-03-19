@@ -21,5 +21,6 @@ app.use("/transactions", transactionRoutes);
 app.use("/reports", reportRoutes);
 app.use("/queue", queueRoutes);
 app.use("/gmail", gmailRoutes);
+app.use("/profile", profileRoutes);
 
 export default app;

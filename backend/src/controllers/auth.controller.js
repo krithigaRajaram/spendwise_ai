@@ -14,6 +14,9 @@ export const signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ error: "Email already registered" });
     }
+    if (password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
