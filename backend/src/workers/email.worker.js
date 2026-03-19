@@ -1,7 +1,6 @@
 import { Worker } from "bullmq";
 import prisma from "../config/prisma.js";
 import { extractEmailBody } from "../utils/email.util.js";
-import { parseHdfcEmail } from "../parsers/hdfc.parser.js";
 import { parseWithAI } from "../parsers/ai.parser.js";
 import { handleInactivityWarning, handleInactivityDelete } from "../modules/gmail/gmail.cleanup.js";
 
@@ -83,10 +82,9 @@ const worker = new Worker(
       try {
         const aiResult = await parseWithAI(cleanBody);
         parsedTxs = [{ ...aiResult, source: "AI" }];
-        console.log("AI parsing succeeded");
       } catch (err) {
-        console.warn("AI parsing failed, falling back to regex:", err.message);
-        parsedTxs = parseHdfcEmail(emailBody).map(tx => ({ ...tx, source: "REGEX" }));
+        console.warn("AI parsing failed, skipping email:", err.message);
+        return;
       }
 
       if (!parsedTxs.length) {
