@@ -33,21 +33,34 @@ export const createTransaction = async (req, res) => {
 
 export const getTransactions = async (req, res) => {
   try {
-    const { month, year } = req.query;
-    let dateFilter = {};
+    const { month, year, type, from, to } = req.query;
 
-    if (month && year) {
+    let dateFilter = {};
+    let typeFilter = {};
+
+    // Date range filter takes priority over month/year
+    if (from || to) {
+      dateFilter = {
+        date: {
+          ...(from && { gte: new Date(from) }),
+          ...(to && { lte: new Date(new Date(to).setHours(23, 59, 59)) })
+        }
+      };
+    } else if (month && year) {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
       dateFilter = { date: { gte: startDate, lte: endDate } };
     }
 
+    if (type && ["INCOME", "EXPENSE"].includes(type.toUpperCase())) {
+      typeFilter = { type: type.toUpperCase() };
+    }
+
     const transactions = await prisma.transaction.findMany({
-      where: { userId: req.userId, ...dateFilter },
+      where: { userId: req.userId, ...dateFilter, ...typeFilter },
       orderBy: { date: "desc" }
     });
 
-    // Apply merchantOverride from MerchantCategory mapping for display
     const mappings = await prisma.merchantCategory.findMany({
       where: { userId: req.userId }
     });

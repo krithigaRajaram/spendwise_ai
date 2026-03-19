@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import queueRoutes from "./routes/queue.routes.js";
 import gmailRoutes from "./modules/gmail/gmail.routes.js";
