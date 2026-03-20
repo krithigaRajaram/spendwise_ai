@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { API_BASE_URL } from "../config";
 
 function LoginPage({ onAuth }) {
   const navigate = useNavigate();
@@ -37,11 +38,30 @@ function LoginPage({ onAuth }) {
     setError("");
     setLoading(true);
     try {
-      await loginUser(email, password);
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+
+      if (response.status === 403 && data.error === "Email not verified") {
+        // Save token and redirect to verify page
+        localStorage.setItem("token", data.token);
+        navigate("/verify");
+        return;
+      }
+
+      if (!response.ok) {
+        setError(data.error || "Invalid email or password. Please try again.");
+        return;
+      }
+
+      localStorage.setItem("token", data.token);
       onAuth();
       navigate("/dashboard");
     } catch {
-      setError("Invalid email or password. Please try again.");
+      setError("Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

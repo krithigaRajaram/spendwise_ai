@@ -49,8 +49,7 @@ function SignupPage({ onAuth }) {
         return;
       }
       localStorage.setItem("token", data.token);
-      onAuth();
-      navigate("/dashboard");
+      navigate("/verify");
     } catch {
       setError("Signup failed. Please try again.");
     } finally {
