@@ -3,8 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { CalendarIcon, FilterX } from "lucide-react";
 import Navbar from "../components/Navbar";
-import { API_BASE_URL } from "../config";
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import {
   Table,
   TableBody,

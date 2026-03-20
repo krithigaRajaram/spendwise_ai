@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { API_BASE_URL } from "../config";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import logoWhite from "../assets/svgs/SpendWiseLogoWhite.png";
