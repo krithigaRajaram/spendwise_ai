@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, FilterX } from "lucide-react";
 import Navbar from "../components/Navbar";
 import { API_BASE_URL } from "../config";
 
@@ -70,6 +70,25 @@ const EMPTY_FORM = {
   date: null,
 };
 
+const MONTHS = [
+  { value: "1", label: "January" },
+  { value: "2", label: "February" },
+  { value: "3", label: "March" },
+  { value: "4", label: "April" },
+  { value: "5", label: "May" },
+  { value: "6", label: "June" },
+  { value: "7", label: "July" },
+  { value: "8", label: "August" },
+  { value: "9", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+const YEARS = Array.from({ length: 5 }, (_, i) =>
+  String(new Date().getFullYear() - i)
+);
+
 function formatCurrency(amount) {
   const num = parseFloat(amount);
   if (isNaN(num)) return "—";
@@ -115,13 +134,42 @@ function DashboardPage({ onLogout }) {
 
   const [deletingId, setDeletingId] = useState(null);
 
+  // Filters
+  const [filterMode, setFilterMode] = useState("month"); // "month" | "range"
+  const [filterType, setFilterType] = useState("ALL");
+  const [filterMonth, setFilterMonth] = useState(String(new Date().getMonth() + 1));
+  const [filterYear, setFilterYear] = useState(String(new Date().getFullYear()));
+  const [filterFrom, setFilterFrom] = useState(null);
+  const [filterTo, setFilterTo] = useState(null);
+
+  // Build query string from filters
+  const buildQuery = useCallback(() => {
+    const params = new URLSearchParams();
+
+    if (filterType !== "ALL") params.set("type", filterType);
+
+    if (filterMode === "month") {
+      params.set("month", filterMonth);
+      params.set("year", filterYear);
+    } else if (filterMode === "range") {
+      if (filterFrom) params.set("from", format(filterFrom, "yyyy-MM-dd"));
+      if (filterTo) params.set("to", format(filterTo, "yyyy-MM-dd"));
+    }
+
+    return params.toString();
+  }, [filterMode, filterType, filterMonth, filterYear, filterFrom, filterTo]);
+
   // Data fetching
   const fetchTransactions = useCallback(async () => {
     try {
       setTxLoading(true);
-      const res = await fetch(`${API_BASE_URL}/transactions`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const query = buildQuery();
+      const res = await fetch(
+        `${API_BASE_URL}/transactions${query ? `?${query}` : ""}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
       const data = await res.json();
       setTransactions(Array.isArray(data) ? data : data.transactions ?? []);
     } catch (err) {
@@ -129,7 +177,7 @@ function DashboardPage({ onLogout }) {
     } finally {
       setTxLoading(false);
     }
-  }, []);
+  }, [buildQuery]);
 
   useEffect(() => {
     fetchTransactions();
@@ -148,6 +196,21 @@ function DashboardPage({ onLogout }) {
       setSearchParams({});
     }
   }, [searchParams]);
+
+  const resetFilters = () => {
+    setFilterMode("month");
+    setFilterType("ALL");
+    setFilterMonth(String(new Date().getMonth() + 1));
+    setFilterYear(String(new Date().getFullYear()));
+    setFilterFrom(null);
+    setFilterTo(null);
+  };
+
+  const hasActiveFilters =
+    filterType !== "ALL" ||
+    filterMode === "range" ||
+    filterMonth !== String(new Date().getMonth() + 1) ||
+    filterYear !== String(new Date().getFullYear());
 
   // Gmail sync
   const fetchEmails = async () => {
@@ -172,7 +235,6 @@ function DashboardPage({ onLogout }) {
       setSyncing(false);
     }
   };
-
 
   // Add Transaction
   const handleFormChange = (e) =>
@@ -386,10 +448,7 @@ function DashboardPage({ onLogout }) {
               Syncing emails in background — transactions will appear shortly…
             </span>
             <button
-              onClick={() => {
-                setSyncing(false);
-                fetchTransactions();
-              }}
+              onClick={() => { setSyncing(false); fetchTransactions(); }}
               className="ml-4 hover:opacity-60 transition-opacity">
               <X className="h-4 w-4" />
             </button>
@@ -401,13 +460,165 @@ function DashboardPage({ onLogout }) {
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Transactions
           </h1>
-          <Button
-            onClick={() => setShowAddDialog(true)}
-            size="sm"
-            className="gap-1.5">
+          <Button onClick={() => setShowAddDialog(true)} size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
             Add Transaction
           </Button>
+        </div>
+
+        {/* ── Filters ── */}
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+
+          {/* Filter Mode Toggle */}
+          <div className="flex items-center rounded-lg border border-border bg-muted p-0.5 gap-0.5">
+            <button
+              onClick={() => setFilterMode("month")}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                filterMode === "month"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}>
+              Month
+            </button>
+            <button
+              onClick={() => setFilterMode("range")}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                filterMode === "range"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}>
+              Date Range
+            </button>
+            <button
+              onClick={() => setFilterMode("all")}
+              className={cn(
+                "px-3 py-1.5 text-xs font-medium rounded-md transition-colors",
+                filterMode === "all"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}>
+              All Time
+            </button>
+          </div>
+
+          {/* Month/Year selectors */}
+          {filterMode === "month" && (
+            <div className="flex items-center gap-2">
+              <Select value={filterMonth} onValueChange={setFilterMonth}>
+                <SelectTrigger className="h-8 w-32 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m) => (
+                    <SelectItem key={m.value} value={m.value} className="text-xs">
+                      {m.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterYear} onValueChange={setFilterYear}>
+                <SelectTrigger className="h-8 w-24 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {YEARS.map((y) => (
+                    <SelectItem key={y} value={y} className="text-xs">
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Date Range pickers */}
+          {filterMode === "range" && (
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-8 text-xs gap-1.5",
+                      !filterFrom && "text-muted-foreground"
+                    )}>
+                    <CalendarIcon className="h-3 w-3" />
+                    {filterFrom ? format(filterFrom, "dd MMM yyyy") : "From"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filterFrom}
+                    onSelect={setFilterFrom}
+                    disabled={(date) => filterTo ? date > filterTo : date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <span className="text-muted-foreground text-xs">to</span>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-8 text-xs gap-1.5",
+                      !filterTo && "text-muted-foreground"
+                    )}>
+                    <CalendarIcon className="h-3 w-3" />
+                    {filterTo ? format(filterTo, "dd MMM yyyy") : "To"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filterTo}
+                    onSelect={setFilterTo}
+                    disabled={(date) => date > new Date() || (filterFrom ? date < filterFrom : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          )}
+
+          {/* Divider */}
+          <div className="h-6 w-px bg-border hidden sm:block" />
+
+          {/* Type filter */}
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="h-8 w-28 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL" className="text-xs">All Types</SelectItem>
+              <SelectItem value="EXPENSE" className="text-xs">Expense</SelectItem>
+              <SelectItem value="INCOME" className="text-xs">Income</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Reset */}
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-muted-foreground hover:text-foreground gap-1.5"
+              onClick={resetFilters}>
+              <FilterX className="h-3.5 w-3.5" />
+              Reset
+            </Button>
+          )}
+
+          {/* Transaction count */}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {transactions.length} transaction{transactions.length !== 1 ? "s" : ""}
+          </span>
         </div>
 
         {/* ── Table ── */}
@@ -415,24 +626,12 @@ function DashboardPage({ onLogout }) {
           <Table>
             <TableHeader>
               <TableRow className="border-border hover:bg-transparent">
-                <TableHead className="pl-6 w-[130px] text-muted-foreground font-medium">
-                  Date
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
-                  Merchant
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
-                  Category
-                </TableHead>
-                <TableHead className="text-muted-foreground font-medium">
-                  Type
-                </TableHead>
-                <TableHead className="text-right text-muted-foreground font-medium">
-                  Amount
-                </TableHead>
-                <TableHead className="pr-6 w-[100px] text-center text-muted-foreground font-medium">
-                  Actions
-                </TableHead>
+                <TableHead className="pl-6 w-[130px] text-muted-foreground font-medium">Date</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Merchant</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Category</TableHead>
+                <TableHead className="text-muted-foreground font-medium">Type</TableHead>
+                <TableHead className="text-right text-muted-foreground font-medium">Amount</TableHead>
+                <TableHead className="pr-6 w-[100px] text-center text-muted-foreground font-medium">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -444,10 +643,8 @@ function DashboardPage({ onLogout }) {
                 </TableRow>
               ) : transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="h-36 text-center text-muted-foreground text-sm">
-                    No transactions yet. Add one or sync Gmail.
+                  <TableCell colSpan={6} className="h-36 text-center text-muted-foreground text-sm">
+                    No transactions found.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -456,14 +653,12 @@ function DashboardPage({ onLogout }) {
                   const isEditingMerchant = editingMerchantId === tx.id;
                   const isIncome = tx.type === "INCOME";
                   return (
-                    <TableRow
-                      key={tx.id}
-                      className="border-border hover:bg-muted/40 transition-colors">
+                    <TableRow key={tx.id} className="border-border hover:bg-muted/40 transition-colors">
                       <TableCell className="pl-6 py-3.5 text-sm text-muted-foreground">
                         {formatDate(tx.date)}
                       </TableCell>
 
-                      {/* ── Merchant Cell ── */}
+                      {/* Merchant */}
                       <TableCell className="py-3.5 text-sm font-medium text-foreground">
                         {isEditingMerchant ? (
                           <div className="flex items-center gap-1.5">
@@ -474,16 +669,12 @@ function DashboardPage({ onLogout }) {
                               autoFocus
                               className="h-7 w-36 text-xs"
                             />
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <Button size="icon" variant="ghost"
                               className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10"
                               onClick={() => requestMerchantSave(tx)}>
                               <Check className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <Button size="icon" variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                               onClick={cancelMerchantEdit}>
                               <X className="h-3.5 w-3.5" />
@@ -498,7 +689,7 @@ function DashboardPage({ onLogout }) {
                         )}
                       </TableCell>
 
-                      {/* ── Category Cell ── */}
+                      {/* Category */}
                       <TableCell className="py-3.5">
                         {isEditingCategory ? (
                           <div className="flex items-center gap-1.5">
@@ -509,16 +700,12 @@ function DashboardPage({ onLogout }) {
                               autoFocus
                               className="h-7 w-36 text-xs"
                             />
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <Button size="icon" variant="ghost"
                               className="h-7 w-7 text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10"
                               onClick={() => requestSave(tx)}>
                               <Check className="h-3.5 w-3.5" />
                             </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <Button size="icon" variant="ghost"
                               className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                               onClick={cancelEdit}>
                               <X className="h-3.5 w-3.5" />
@@ -532,31 +719,28 @@ function DashboardPage({ onLogout }) {
                       </TableCell>
 
                       <TableCell className="py-3.5">
-                        <Badge
-                          className={
-                            isIncome
-                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15 font-medium"
-                              : "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/15 font-medium"
-                          }>
+                        <Badge className={
+                          isIncome
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15 font-medium"
+                            : "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/15 font-medium"
+                        }>
                           {isIncome ? "Income" : "Expense"}
                         </Badge>
                       </TableCell>
+
                       <TableCell className="py-3.5 text-right">
-                        <span
-                          className={`text-sm font-semibold tabular-nums ${
-                            isIncome
-                              ? "text-emerald-700 dark:text-emerald-400"
-                              : "text-rose-700 dark:text-rose-400"
-                          }`}>
-                          {isIncome ? "+" : "-"}
-                          {formatCurrency(tx.amount)}
+                        <span className={`text-sm font-semibold tabular-nums ${
+                          isIncome
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-rose-700 dark:text-rose-400"
+                        }`}>
+                          {isIncome ? "+" : "-"}{formatCurrency(tx.amount)}
                         </span>
                       </TableCell>
+
                       <TableCell className="pr-6 py-3.5 text-center">
                         <div className="flex items-center justify-center gap-0.5">
-                          <Button
-                            size="icon"
-                            variant="ghost"
+                          <Button size="icon" variant="ghost"
                             className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted"
                             onClick={() => startEdit(tx)}
                             disabled={isEditingCategory}>
@@ -566,9 +750,7 @@ function DashboardPage({ onLogout }) {
                             open={deletingId === tx.id}
                             onOpenChange={(open) => !open && setDeletingId(null)}>
                             <AlertDialogTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
+                              <Button size="icon" variant="ghost"
                                 className="h-7 w-7 text-muted-foreground hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10"
                                 onClick={() => setDeletingId(tx.id)}>
                                 <Trash2 className="h-3.5 w-3.5" />
@@ -576,22 +758,17 @@ function DashboardPage({ onLogout }) {
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-card border-border">
                               <AlertDialogHeader>
-                                <AlertDialogTitle className="text-foreground">
-                                  Delete transaction?
-                                </AlertDialogTitle>
+                                <AlertDialogTitle className="text-foreground">Delete transaction?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-muted-foreground">
                                   This will permanently remove{" "}
                                   <span className="text-foreground font-medium">
                                     {tx.merchantDisplay || tx.merchant || "this transaction"}
                                   </span>
-                                  {tx.amount ? ` (${formatCurrency(tx.amount)})` : ""}
-                                  . This cannot be undone.
+                                  {tx.amount ? ` (${formatCurrency(tx.amount)})` : ""}. This cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel className="hover:bg-muted">
-                                  Cancel
-                                </AlertDialogCancel>
+                                <AlertDialogCancel className="hover:bg-muted">Cancel</AlertDialogCancel>
                                 <AlertDialogAction
                                   className="bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-700"
                                   onClick={() => deleteTransaction(tx.id)}>
@@ -610,167 +787,104 @@ function DashboardPage({ onLogout }) {
           </Table>
         </div>
 
-        {/* ── Category Scope Confirmation Dialog ── */}
-        <Dialog
-          open={!!pendingEdit}
-          onOpenChange={(open) => {
-            if (!open && !editSaving) setPendingEdit(null);
-          }}>
+        {/* ── Category Scope Dialog ── */}
+        <Dialog open={!!pendingEdit} onOpenChange={(open) => { if (!open && !editSaving) setPendingEdit(null); }}>
           <DialogContent className="sm:max-w-[500px] bg-card border-border p-0 overflow-hidden">
             <div className="px-6 pt-6 pb-2">
               <DialogHeader>
-                <DialogTitle className="text-base text-foreground">
-                  Apply category change
-                </DialogTitle>
+                <DialogTitle className="text-base text-foreground">Apply category change</DialogTitle>
                 <DialogDescription className="text-muted-foreground text-sm pt-1">
                   You're changing the category to{" "}
-                  <span className="text-foreground font-semibold">
-                    {pendingEdit?.newCategory}
-                  </span>
+                  <span className="text-foreground font-semibold">{pendingEdit?.newCategory}</span>
                   {pendingEdit?.merchant && (
-                    <>
-                      {" "}for{" "}
-                      <span className="text-foreground font-semibold">
-                        {pendingEdit.merchant}
-                      </span>
-                    </>
-                  )}
-                  . How would you like to apply this?
+                    <> for <span className="text-foreground font-semibold">{pendingEdit.merchant}</span></>
+                  )}. How would you like to apply this?
                 </DialogDescription>
               </DialogHeader>
             </div>
             <div className="px-6 pb-6 pt-3 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => applyCategory(false)}
-                disabled={editSaving}
+              <button onClick={() => applyCategory(false)} disabled={editSaving}
                 className="group flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-border/80 p-4 text-left transition-all disabled:opacity-50 cursor-pointer">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background group-hover:bg-muted transition-colors border border-border">
                   <Tag className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
-                <p className="text-sm font-medium text-foreground leading-snug">
-                  This transaction only
-                </p>
+                <p className="text-sm font-medium text-foreground leading-snug">This transaction only</p>
               </button>
-              <button
-                onClick={() => applyCategory(true)}
-                disabled={editSaving}
+              <button onClick={() => applyCategory(true)} disabled={editSaving}
                 className="group flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-border/80 p-4 text-left transition-all disabled:opacity-50 cursor-pointer">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background group-hover:bg-muted transition-colors border border-border">
                   <Tags className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
                 <p className="text-sm font-medium text-foreground leading-snug">
-                  All from{" "}
-                  <span className="font-semibold">
-                    {pendingEdit?.merchant || "this merchant"}
-                  </span>
+                  All from <span className="font-semibold">{pendingEdit?.merchant || "this merchant"}</span>
                 </p>
               </button>
             </div>
             {editSaving && (
               <div className="border-t border-border px-6 py-3 flex items-center gap-2 text-muted-foreground text-xs bg-muted/30">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Applying changes…
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />Applying changes…
               </div>
             )}
           </DialogContent>
         </Dialog>
 
-        {/* ── Merchant Scope Confirmation Dialog ── */}
-        <Dialog
-          open={!!pendingMerchantEdit}
-          onOpenChange={(open) => {
-            if (!open && !merchantEditSaving) setPendingMerchantEdit(null);
-          }}>
+        {/* ── Merchant Scope Dialog ── */}
+        <Dialog open={!!pendingMerchantEdit} onOpenChange={(open) => { if (!open && !merchantEditSaving) setPendingMerchantEdit(null); }}>
           <DialogContent className="sm:max-w-[500px] bg-card border-border p-0 overflow-hidden">
             <div className="px-6 pt-6 pb-2">
               <DialogHeader>
-                <DialogTitle className="text-base text-foreground">
-                  Apply merchant name change
-                </DialogTitle>
+                <DialogTitle className="text-base text-foreground">Apply merchant name change</DialogTitle>
                 <DialogDescription className="text-muted-foreground text-sm pt-1">
                   You're renaming{" "}
-                  <span className="text-foreground font-semibold">
-                    {pendingMerchantEdit?.originalMerchant}
-                  </span>{" "}
+                  <span className="text-foreground font-semibold">{pendingMerchantEdit?.originalMerchant}</span>{" "}
                   to{" "}
-                  <span className="text-foreground font-semibold">
-                    {pendingMerchantEdit?.newMerchant}
-                  </span>
-                  . How would you like to apply this?
+                  <span className="text-foreground font-semibold">{pendingMerchantEdit?.newMerchant}</span>. How would you like to apply this?
                 </DialogDescription>
               </DialogHeader>
             </div>
             <div className="px-6 pb-6 pt-3 grid grid-cols-2 gap-3">
-              <button
-                onClick={() => applyMerchant(false)}
-                disabled={merchantEditSaving}
+              <button onClick={() => applyMerchant(false)} disabled={merchantEditSaving}
                 className="group flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-border/80 p-4 text-left transition-all disabled:opacity-50 cursor-pointer">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background group-hover:bg-muted transition-colors border border-border">
                   <Tag className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
-                <p className="text-sm font-medium text-foreground leading-snug">
-                  This transaction only
-                </p>
+                <p className="text-sm font-medium text-foreground leading-snug">This transaction only</p>
               </button>
-              <button
-                onClick={() => applyMerchant(true)}
-                disabled={merchantEditSaving}
+              <button onClick={() => applyMerchant(true)} disabled={merchantEditSaving}
                 className="group flex flex-col items-start gap-3 rounded-lg border border-border bg-muted/40 hover:bg-muted hover:border-border/80 p-4 text-left transition-all disabled:opacity-50 cursor-pointer">
                 <div className="flex h-9 w-9 items-center justify-center rounded-md bg-background group-hover:bg-muted transition-colors border border-border">
                   <Tags className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </div>
                 <p className="text-sm font-medium text-foreground leading-snug">
-                  All from{" "}
-                  <span className="font-semibold">
-                    {pendingMerchantEdit?.originalMerchant || "this merchant"}
-                  </span>
+                  All from <span className="font-semibold">{pendingMerchantEdit?.originalMerchant || "this merchant"}</span>
                 </p>
               </button>
             </div>
             {merchantEditSaving && (
               <div className="border-t border-border px-6 py-3 flex items-center gap-2 text-muted-foreground text-xs bg-muted/30">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Applying changes…
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />Applying changes…
               </div>
             )}
           </DialogContent>
         </Dialog>
 
         {/* ── Add Transaction Dialog ── */}
-        <Dialog
-          open={showAddDialog}
-          onOpenChange={(open) => {
-            setShowAddDialog(open);
-            if (!open) setFormData(EMPTY_FORM);
-          }}>
+        <Dialog open={showAddDialog} onOpenChange={(open) => { setShowAddDialog(open); if (!open) setFormData(EMPTY_FORM); }}>
           <DialogContent className="sm:max-w-[440px] bg-card border-border">
             <DialogHeader>
-              <DialogTitle className="text-foreground">
-                Add Transaction
-              </DialogTitle>
+              <DialogTitle className="text-foreground">Add Transaction</DialogTitle>
             </DialogHeader>
-
             <form onSubmit={addTransaction} className="space-y-4 pt-2">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="amount">Amount</Label>
-                  <Input
-                    id="amount"
-                    name="amount"
-                    placeholder="0.00"
-                    value={formData.amount}
-                    onChange={handleFormChange}
-                    required
-                  />
+                  <Input id="amount" name="amount" placeholder="0.00"
+                    value={formData.amount} onChange={handleFormChange} required />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type</Label>
-                  <Select
-                    value={formData.type}
-                    onValueChange={(val) => handleSelectChange("type", val)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={formData.type} onValueChange={(val) => handleSelectChange("type", val)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="EXPENSE">Expense</SelectItem>
                       <SelectItem value="INCOME">Income</SelectItem>
@@ -778,80 +892,39 @@ function DashboardPage({ onLogout }) {
                   </Select>
                 </div>
               </div>
-
               <div className="space-y-1.5">
                 <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  name="category"
-                  placeholder="e.g. Food, Transport"
-                  value={formData.category}
-                  onChange={handleFormChange}
-                  required
-                />
+                <Input id="category" name="category" placeholder="e.g. Food, Transport"
+                  value={formData.category} onChange={handleFormChange} required />
               </div>
-
               <div className="space-y-1.5">
                 <Label htmlFor="merchant">
-                  Merchant{" "}
-                  <span className="text-muted-foreground font-normal">
-                    (optional)
-                  </span>
+                  Merchant <span className="text-muted-foreground font-normal">(optional)</span>
                 </Label>
-                <Input
-                  id="merchant"
-                  name="merchant"
-                  placeholder="e.g. Swiggy, Amazon"
-                  value={formData.merchant}
-                  onChange={handleFormChange}
-                />
+                <Input id="merchant" name="merchant" placeholder="e.g. Swiggy, Amazon"
+                  value={formData.merchant} onChange={handleFormChange} />
               </div>
-
               <div className="space-y-1.5">
                 <Label>Date</Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.date && "text-muted-foreground"
-                      )}>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.date && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                      {formData.date
-                        ? format(formData.date, "dd MMM yyyy")
-                        : "Pick a date"}
+                      {formData.date ? format(formData.date, "dd MMM yyyy") : "Pick a date"}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent
-                    className="w-auto p-0 bg-card border-border"
-                    align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.date}
-                      onSelect={handleDateChange}
-                      initialFocus
-                      disabled={(date) => date > new Date()}
-                    />
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                    <Calendar mode="single" selected={formData.date} onSelect={handleDateChange}
+                      initialFocus disabled={(date) => date > new Date()} />
                   </PopoverContent>
                 </Popover>
               </div>
-
               <DialogFooter className="pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddDialog(false);
-                    setFormData(EMPTY_FORM);
-                  }}
-                  disabled={formSaving}>
-                  Cancel
-                </Button>
+                <Button type="button" variant="outline"
+                  onClick={() => { setShowAddDialog(false); setFormData(EMPTY_FORM); }}
+                  disabled={formSaving}>Cancel</Button>
                 <Button type="submit" disabled={formSaving}>
-                  {formSaving && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  {formSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Save Transaction
                 </Button>
               </DialogFooter>

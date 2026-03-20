@@ -88,10 +88,17 @@ export const getTransactions = async (req, res) => {
 export const getSummary = async (req, res) => {
   try {
     const userId = req.userId;
-    const { month, year } = req.query;
+    const { month, year, from, to } = req.query;
     let dateFilter = {};
 
-    if (month && year) {
+    if (from || to) {
+      dateFilter = {
+        date: {
+          ...(from && { gte: new Date(from) }),
+          ...(to && { lte: new Date(new Date(to).setHours(23, 59, 59)) })
+        }
+      };
+    } else if (month && year) {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0, 23, 59, 59);
       dateFilter = { date: { gte: startDate, lte: endDate } };

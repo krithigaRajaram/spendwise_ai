@@ -1,42 +1,39 @@
 import prisma from "../config/prisma.js";
+
 export const getMonthlyReport = async (req, res) => {
   try {
     const userId = req.userId;
-    const { month, year } = req.query;
+    const { month, year, from, to } = req.query;
 
-    if (!month || !year) {
-      return res.status(400).json({
-        message: "Month and year are required"
-      });
-    }
+    let dateFilter = {};
+    let periodLabel = {};
 
-    const monthNumber = Number(month);
-    const yearNumber = Number(year);
-
-    if (
-      isNaN(monthNumber) ||
-      isNaN(yearNumber) ||
-      monthNumber < 1 ||
-      monthNumber > 12
-    ) {
-      return res.status(400).json({
-        message: "Invalid month or year"
-      });
-    }
-
-    // Define date range
-    const startDate = new Date(yearNumber, monthNumber - 1, 1);
-    const endDate = new Date(yearNumber, monthNumber, 1);
-
-    // Fetch transactions for that month
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId,
+    if (from || to) {
+      dateFilter = {
         date: {
-          gte: startDate,
-          lt: endDate
+          ...(from && { gte: new Date(from) }),
+          ...(to && { lte: new Date(new Date(to).setHours(23, 59, 59)) })
         }
+      };
+      periodLabel = { from, to };
+    } else if (month && year) {
+      const monthNumber = Number(month);
+      const yearNumber = Number(year);
+
+      if (isNaN(monthNumber) || isNaN(yearNumber) || monthNumber < 1 || monthNumber > 12) {
+        return res.status(400).json({ message: "Invalid month or year" });
       }
+
+      const startDate = new Date(yearNumber, monthNumber - 1, 1);
+      const endDate = new Date(yearNumber, monthNumber, 1);
+      dateFilter = { date: { gte: startDate, lt: endDate } };
+      periodLabel = { month: monthNumber, year: yearNumber };
+    } else {
+      return res.status(400).json({ message: "Either month/year or from/to is required" });
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: { userId, ...dateFilter }
     });
 
     let totalIncome = 0;
@@ -44,34 +41,23 @@ export const getMonthlyReport = async (req, res) => {
     const expenseByCategory = {};
 
     for (const tx of transactions) {
-      if (tx.type === "INCOME") {
-        totalIncome += tx.amount;
-      }
-
+      if (tx.type === "INCOME") totalIncome += tx.amount;
       if (tx.type === "EXPENSE") {
         totalExpense += tx.amount;
-
-        if (!expenseByCategory[tx.category]) {
-          expenseByCategory[tx.category] = 0;
-        }
-
-        expenseByCategory[tx.category] += tx.amount;
+        expenseByCategory[tx.category] = (expenseByCategory[tx.category] || 0) + tx.amount;
       }
     }
 
     return res.json({
-      month: monthNumber,
-      year: yearNumber,
+      ...periodLabel,
       totalIncome,
       totalExpense,
       netBalance: totalIncome - totalExpense,
-      expenseByCategory
+      expenseByCategory,
+      transactionCount: transactions.length
     });
-
   } catch (err) {
-    console.error("Monthly Report Error:", err);
-    return res.status(500).json({
-      message: "Failed to generate monthly report"
-    });
+    console.error("Report Error:", err);
+    return res.status(500).json({ message: "Failed to generate report" });
   }
 };
