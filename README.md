@@ -220,6 +220,32 @@ Frontend runs at `http://localhost:5173`
 ```
 ---
 
+### Gmail Management
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/gmail/auth` | Start Gmail OAuth flow |
+| GET | `/gmail/callback` | OAuth2 callback (handled by Google redirect) |
+| POST | `/gmail/fetch` | Trigger email fetch and processing |
+| DELETE | `/gmail/disconnect` | Disconnect Gmail account |
+
+#### Response Examples
+
+**DELETE `/gmail/disconnect`**
+```json
+// 200 — Success
+{ "message": "Gmail disconnected successfully" }
+
+// 400 — Gmail not connected
+{ "error": "Gmail is not connected" }
+```
+
+#### Inactivity Policy
+When Gmail is disconnected:
+- **Day 30** — Warning email sent to user
+- **Day 60** — Final warning email sent (account deletion in 30 days)
+- **Day 90** — Account and all associated data permanently deleted
+- Reconnecting Gmail at any point cancels all scheduled warnings and deletion
+
 ## How It Works
 
 1. User connects their Gmail account via OAuth2
