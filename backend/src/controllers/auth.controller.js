@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { sendVerificationEmail } from "../modules/gmail/gmail.mailer.js";
+import { emailQueue } from "../queues/email.queue.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const googleClient = new OAuth2Client(process.env.GMAIL_CLIENT_ID);
@@ -37,6 +38,13 @@ export const signup = async (req, res) => {
     });
 
     await sendVerificationEmail(email, name, verificationCode);
+
+    // Schedule deletion if not verified within 30 minutes
+    await emailQueue.add(
+      "delete-unverified-user",
+      { userId: user.id },
+      { delay: 30 * 60 * 1000, jobId: `unverified-cleanup-${user.id}` }
+    );
 
     const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "5h" });
     res.status(201).json({ token, isVerified: false });
@@ -83,7 +91,6 @@ export const googleAuth = async (req, res) => {
   }
 };
 
-
 export const verifyEmail = async (req, res) => {
   const { code } = req.body;
   const userId = req.userId;
@@ -111,6 +118,10 @@ export const verifyEmail = async (req, res) => {
       where: { id: userId },
       data: { isVerified: true, verificationCode: null, verificationExpiry: null }
     });
+
+    // Cancel the unverified cleanup job
+    const cleanupJob = await emailQueue.getJob(`unverified-cleanup-${userId}`);
+    if (cleanupJob) await cleanupJob.remove();
 
     res.json({ message: "Email verified successfully" });
   } catch (err) {
@@ -143,7 +154,6 @@ export const resendVerification = async (req, res) => {
     res.status(500).json({ error: "Failed to resend verification code" });
   }
 };
-
 
 export const login = async (req, res) => {
   const { email, password } = req.body;

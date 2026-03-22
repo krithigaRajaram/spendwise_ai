@@ -48,6 +48,17 @@ const worker = new Worker(
         return;
       }
 
+      // Handle unverified user cleanup job
+      if (job.name === "delete-unverified-user") {
+        const { userId } = job.data;
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user && !user.isVerified) {
+          await prisma.user.delete({ where: { id: userId } });
+          console.log(`Unverified user ${userId} deleted after 30 minutes`);
+        }
+        return;
+      }
+
       // Default — process email
       const { rawEmailId } = job.data;
       console.log("Job received:", rawEmailId);

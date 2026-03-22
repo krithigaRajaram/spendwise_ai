@@ -23,10 +23,8 @@ export const fetchAndStoreEmails = async (userId) => {
     ));
     afterTs = Math.floor(fetchFrom.getTime() / 1000);
   } else {
-    // First time — fetch last 1 month
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-    afterTs = Math.floor(oneMonthAgo.getTime() / 1000);
+    // First time — fetch last 3 month
+  afterTs = Math.floor(threeMonthsAgo.getTime() / 1000);
   }
 
   // Cancel inactivity jobs and clear disconnectedAt on reconnect

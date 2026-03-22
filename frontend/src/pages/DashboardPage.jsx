@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { CalendarIcon, FilterX } from "lucide-react";
 import Navbar from "../components/Navbar";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 import {
   Table,
   TableBody,
@@ -111,6 +112,7 @@ function DashboardPage({ onLogout }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [gmailConnected, setGmailConnected] = useState(false);
   const [gmailAlreadyConnected, setGmailAlreadyConnected] = useState(false);
+  const [gmailEmailMismatch, setGmailEmailMismatch] = useState(false);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [transactions, setTransactions] = useState([]);
@@ -192,6 +194,10 @@ function DashboardPage({ onLogout }) {
     }
     if (gmailStatus === "already_connected") {
       setGmailAlreadyConnected(true);
+      setSearchParams({});
+    }
+    if (gmailStatus === "email_mismatch") {
+      setGmailEmailMismatch(true);
       setSearchParams({});
     }
   }, [searchParams]);
@@ -429,6 +435,16 @@ function DashboardPage({ onLogout }) {
             <span>This Gmail account is already connected to another user.</span>
             <button
               onClick={() => setGmailAlreadyConnected(false)}
+              className="ml-4 hover:opacity-60 transition-opacity">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {gmailEmailMismatch && (
+          <div className="flex items-center justify-between rounded-lg border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-rose-700 dark:text-rose-400 text-sm font-medium">
+            <span>The Gmail account you selected does not match your registered email. Please connect the correct Gmail account.</span>
+            <button
+              onClick={() => setGmailEmailMismatch(false)}
               className="ml-4 hover:opacity-60 transition-opacity">
               <X className="h-4 w-4" />
             </button>

@@ -32,7 +32,6 @@ export const gmailCallback = async (req, res) => {
 
     const { tokens } = await oauth2Client.getToken(code);
 
-    // Create a new client with tokens explicitly set
     const authedClient = new google.auth.OAuth2(
       process.env.GMAIL_CLIENT_ID,
       process.env.GMAIL_CLIENT_SECRET,
@@ -40,10 +39,15 @@ export const gmailCallback = async (req, res) => {
     );
     authedClient.setCredentials(tokens);
 
-    // Get the Gmail address using the authed client
     const oauth2 = google.oauth2({ version: "v2", auth: authedClient });
     const { data: googleUser } = await oauth2.userinfo.get();
     const gmailEmail = googleUser.email;
+
+    // Check if Gmail matches the user's registered email
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (user.email !== gmailEmail) {
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?gmail=email_mismatch`);
+    }
 
     // Check if this Gmail is already connected to a different user
     const existingToken = await prisma.gmailToken.findFirst({
