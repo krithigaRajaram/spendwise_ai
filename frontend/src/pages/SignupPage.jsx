@@ -51,6 +51,7 @@ function SignupPage({ onAuth }) {
         return;
       }
       localStorage.setItem("token", data.token);
+      localStorage.removeItem("isVerified");
       navigate("/verify");
     } catch {
       setError("Signup failed. Please try again.");
@@ -86,6 +87,7 @@ function SignupPage({ onAuth }) {
         }
 
         localStorage.setItem("token", data.token);
+        localStorage.setItem("isVerified", "true");
         onAuth();
         navigate("/dashboard");
       } catch {

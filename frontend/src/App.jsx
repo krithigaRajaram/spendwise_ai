@@ -11,7 +11,10 @@ function App() {
   const [authenticated, setAuthenticated] = useState(isAuthenticated());
 
   const handleAuthChange = () => setAuthenticated(isAuthenticated());
-  const handleLogout = () => setAuthenticated(false);
+  const handleLogout = () => {
+    localStorage.removeItem("isVerified");
+    setAuthenticated(false);
+  };
 
   return (
     <Routes>

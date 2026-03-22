@@ -40,16 +40,19 @@ function VerifyEmailPage({ onAuth }) {
       const payload = JSON.parse(atob(token.split(".")[1]));
       if (payload.exp * 1000 < Date.now()) {
         localStorage.removeItem("token");
+        localStorage.removeItem("isVerified");
         setSessionExpired(true);
       }
     } catch {
       localStorage.removeItem("token");
+      localStorage.removeItem("isVerified");
       setSessionExpired(true);
     }
   }, []);
 
   const handleSessionExpired = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("isVerified");
     setSessionExpired(true);
   };
 
@@ -81,6 +84,7 @@ function VerifyEmailPage({ onAuth }) {
         return;
       }
 
+      localStorage.setItem("isVerified", "true");
       onAuth();
       navigate("/dashboard");
     } catch {

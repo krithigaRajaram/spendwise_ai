@@ -48,6 +48,7 @@ function LoginPage({ onAuth }) {
 
       if (response.status === 403 && data.error === "Email not verified") {
         localStorage.setItem("token", data.token);
+        localStorage.removeItem("isVerified");
         navigate("/verify");
         return;
       }
@@ -58,6 +59,7 @@ function LoginPage({ onAuth }) {
       }
 
       localStorage.setItem("token", data.token);
+      localStorage.setItem("isVerified", "true");
       onAuth();
       navigate("/dashboard");
     } catch {
@@ -72,7 +74,6 @@ function LoginPage({ onAuth }) {
       setGoogleLoading(true);
       setError("");
       try {
-        // Get ID token from access token
         const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
         });
@@ -96,6 +97,7 @@ function LoginPage({ onAuth }) {
         }
 
         localStorage.setItem("token", data.token);
+        localStorage.setItem("isVerified", "true");
         onAuth();
         navigate("/dashboard");
       } catch {
@@ -172,8 +174,7 @@ function LoginPage({ onAuth }) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              
-                <a href="#"
+              <a href="#"
                 className="text-xs text-muted-foreground underline-offset-4 hover:underline hover:text-primary transition-colors">
                 Forgot password?
               </a>
