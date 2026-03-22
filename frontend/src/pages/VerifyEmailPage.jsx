@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 import { useTheme } from "../contexts/ThemeContext";
 import logoWhite from "../assets/svgs/SpendWiseLogoWhite.png";
@@ -27,6 +27,31 @@ function VerifyEmailPage({ onAuth }) {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setSessionExpired(true);
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem("token");
+        setSessionExpired(true);
+      }
+    } catch {
+      localStorage.removeItem("token");
+      setSessionExpired(true);
+    }
+  }, []);
+
+  const handleSessionExpired = () => {
+    localStorage.removeItem("token");
+    setSessionExpired(true);
+  };
 
   const verify = async () => {
     if (!code.trim()) {
@@ -45,6 +70,11 @@ function VerifyEmailPage({ onAuth }) {
         body: JSON.stringify({ code }),
       });
       const data = await response.json();
+
+      if (response.status === 401 || response.status === 404) {
+        handleSessionExpired();
+        return;
+      }
 
       if (!response.ok) {
         setError(data.error || "Verification failed. Please try again.");
@@ -72,10 +102,17 @@ function VerifyEmailPage({ onAuth }) {
         },
       });
       const data = await response.json();
+
+      if (response.status === 401 || response.status === 404) {
+        handleSessionExpired();
+        return;
+      }
+
       if (!response.ok) {
         setError(data.error || "Failed to resend code.");
         return;
       }
+
       setSuccess("A new verification code has been sent to your email.");
     } catch {
       setError("Failed to resend code. Please try again.");
@@ -87,6 +124,32 @@ function VerifyEmailPage({ onAuth }) {
   const handleKeyDown = (e) => {
     if (e.key === "Enter") verify();
   };
+
+  if (sessionExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-sm shadow-lg">
+          <CardHeader className="space-y-1 text-center">
+            <div className="flex justify-center mb-2">
+              <img src={isDark ? logoWhite : logoBlack} alt="SpendWise Logo" width={40} height={40} />
+            </div>
+            <CardTitle className="text-2xl font-semibold">Session expired</CardTitle>
+            <CardDescription>
+              Your verification session has expired. Please sign up again to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button className="w-full" asChild>
+              <Link to="/signup">
+                Sign up again
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
